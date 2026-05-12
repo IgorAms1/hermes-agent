@@ -52,6 +52,18 @@ ignored/
 .worktrees/
 environments/benchmarks/evals/
 
+# Igor OS local/private runtime files
+igor-os/.env
+igor-os/.env.*
+!igor-os/.env.example
+igor-os/**/*.local.md
+igor-os/logs/
+igor-os/data/
+igor-os/memory/
+igor-os/*.sqlite
+igor-os/*.sqlite3
+igor-os/*.db
+
 # Web UI build output
 hermes_cli/web_dist/
 

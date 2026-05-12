@@ -1,0 +1,40 @@
+# Igor OS Hermes config overlay.
+# Install with ./igor-os/scripts/install-igor-os.sh or copy into ~/.hermes/config.yaml.
+
+model:
+  # OpenRouter model slug. Override at runtime with HERMES_INFERENCE_MODEL in ~/.hermes/.env.
+  default: "anthropic/claude-opus-4.6"
+  provider: "openrouter"
+  base_url: "https://openrouter.ai/api/v1"
+
+provider_routing:
+  # Favor fast providers where OpenRouter supports routing.
+  sort: "throughput"
+  # Prefer providers with no data collection when available.
+  data_collection: "deny"
+
+terminal:
+  backend: "local"
+  cwd: "."
+  timeout: 180
+  lifetime_seconds: 300
+
+skills:
+  # External skill dirs are read-only discovery locations.
+  # This makes Igor OS slash modes available in CLI and Telegram.
+  external_dirs:
+    - "${IGOR_OS_DIR}/skills"
+
+platform_toolsets:
+  cli: [hermes-cli]
+  telegram: [hermes-telegram]
+
+platforms:
+  telegram:
+    reply_to_mode: "first"
+    guest_mode: false
+    extra:
+      disable_link_previews: false
+
+cron:
+  wrap_deliveries: true
