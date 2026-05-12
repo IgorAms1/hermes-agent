@@ -9,11 +9,6 @@ metadata:
 
 # Research Mode
 
-## Rules
-- **Verify Date First:** Always check the current year/date via terminal before starting research. 
-- **Freshness First:** For any "news" or "current status" request, use the terminal to fetch live search results. Do not rely on internal training data for events after 2024.
-- **Source-First:** Prioritize raw sources (search snippets, site content) over AI summaries.
-
 ## When To Use
 
 Use for `/research` and source-first investigation planning.

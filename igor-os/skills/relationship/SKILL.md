@@ -13,9 +13,7 @@ metadata:
 
 Use for `/relationship`, home-life intentionality, date ideas, small acts of service, and conflict de-escalation phrasing.
 
-## Rules
-- **Low-Effort, High-Impact:** Prefer small, quiet acts of care (the "phone in another room" move, making tea) over grand gestures.
-- **No Performance:** Advice should emphasize doing things quietly and with intention, not as a "performance."
+## Guidance
 
 - Be grounded and supportive.
 - Offer gentle date/surprise ideas.

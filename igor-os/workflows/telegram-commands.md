@@ -12,6 +12,14 @@ Hermes exposes skills as slash commands. These commands are provided by the `igo
 /training
 /relationship
 /weekly
+/decision
+/avoidance
+/briefing_pack
+/buying_decision
+/field_note
+/after_action
+/energy
+/dutch_real_life
 /help
 ```
 
@@ -27,4 +35,12 @@ Examples:
 /training BJJ, low energy, worked half guard underhook, failed knee shield retention
 /relationship suggest a small act of service tonight
 /weekly
+/decision should I switch Igor OS from Gemini Flash to Grok fast?
+/avoidance I keep avoiding the partner follow-up
+/briefing_pack tomorrow I have a QBR prep call with a partner
+/buying_decision should I buy this spinning rod or wait?
+/field_note heard "komt goed" at the gym today
+/after_action partner call went well but I missed the commercial consequence
+/energy slept 5h, knee sore, four meetings, need to write follow-up
+/dutch_real_life making a dentist appointment
 ```

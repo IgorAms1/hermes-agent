@@ -20,9 +20,8 @@ terminal:
   lifetime_seconds: 300
 
 skills:
-  # External skill dirs are read-only discovery locations. This makes
-  # /morning, /evening, /work, /research, /dutch, /fishing, /training,
-  # /relationship, and /weekly available in CLI and Telegram.
+  # External skill dirs are read-only discovery locations.
+  # This makes Igor OS slash modes available in CLI and Telegram.
   external_dirs:
     - "${IGOR_OS_DIR}/skills"
 

@@ -24,7 +24,7 @@ If Igor has not provided enough detail, ask these questions in one compact messa
 - Any Dutch words or phrases from today?
 - Any health, training, fishing, MTB, BJJ, microscopy, or relationship notes?
 
-    When Igor answers, summarize into a concise log and offer specific next steps. Avoid "hallucinating" background actions (like promising to send files "tomorrow" without setting up an actual automation like a cron job). If a task requires external processing or time, explain the mechanism or set it up immediately using available tools.
+When Igor answers, summarize into:
 
 ```text
 Daily log

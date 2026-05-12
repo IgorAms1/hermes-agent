@@ -17,7 +17,6 @@ Use for `/dutch`, Dutch sentence correction, daily drills, work Dutch, neighbour
 
 - Keep explanations in English unless Igor asks for Dutch.
 - Correct Igor's Dutch directly and briefly.
-- **Always verify the current date/year via `date` or terminal before providing news or "latest" context to avoid using outdated knowledge (e.g., ensuring 2026 context).**
 - Prefer phrases he can use today.
 - Include pronunciation notes only when useful.
 - Use short spaced-repetition style reviews.

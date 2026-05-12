@@ -28,6 +28,14 @@ igor-os/
     training/SKILL.md
     relationship/SKILL.md
     weekly/SKILL.md
+    decision/SKILL.md
+    avoidance/SKILL.md
+    briefing_pack/SKILL.md
+    buying_decision/SKILL.md
+    field_note/SKILL.md
+    after_action/SKILL.md
+    energy/SKILL.md
+    dutch_real_life/SKILL.md
   workflows/
     telegram-commands.md
     first-7-days.md
@@ -81,6 +89,14 @@ igor-os/
    /training BJJ session notes...
    /relationship suggest something small for tonight
    /weekly
+   /decision should I switch models?
+   /avoidance I keep avoiding the partner follow-up
+   /briefing_pack prep tomorrow's partner call
+   /buying_decision should I buy this fishing rod?
+   /field_note heard "komt goed" at the gym
+   /after_action review today's interview
+   /energy slept badly and have four meetings
+   /dutch_real_life making a dentist appointment
    ```
 
 ## OpenRouter
