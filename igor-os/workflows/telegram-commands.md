@@ -7,6 +7,8 @@ Hermes exposes skills as slash commands. These commands are provided by the `igo
 /evening
 /work
 /research
+/deep_research
+/mindmap
 /dutch
 /fishing
 /training
@@ -30,6 +32,8 @@ Examples:
 /evening
 /work turn these partner call notes into an escalation memo: ...
 /research source plan for Amsterdam zander fishing in winter
+/deep_research compare self-hosted DevOps automation platforms for Semaphore positioning
+/mindmap make a process map from the latest deep research
 /dutch give me a 10-minute drill for neighbourhood/admin Dutch
 /fishing location: Nieuwe Meer, wind W 4 bft, perch, dropshot...
 /training BJJ, low energy, worked half guard underhook, failed knee shield retention

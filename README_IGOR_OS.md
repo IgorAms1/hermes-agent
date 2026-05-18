@@ -18,11 +18,14 @@ igor-os/
     examples.md
   scripts/
     install-igor-os.sh
+    render_mindmap.py
   skills/
     morning/SKILL.md
     evening/SKILL.md
     work/SKILL.md
     research/SKILL.md
+    deep_research/SKILL.md
+    mindmap/SKILL.md
     dutch/SKILL.md
     fishing/SKILL.md
     training/SKILL.md
@@ -84,6 +87,8 @@ igor-os/
    /evening
    /work messy notes from a partner call...
    /research compare pike fishing methods for Amsterdam canals
+   /deep_research compare self-hosted DevOps automation platforms for Semaphore positioning
+   /mindmap make a visual process map from the latest deep research
    /dutch correct: Ik heb gisteren naar kantoor gefietst
    /fishing log tonight's session...
    /training BJJ session notes...
@@ -137,9 +142,9 @@ Cron jobs are managed by Hermes, not custom Igor OS code. See `igor-os/cron/exam
 Typical setup:
 
 ```bash
-hermes cron create "0 7 * * *" "Create today's Igor OS morning brief." --skill morning --deliver telegram --workdir "$(pwd)/igor-os" --name "Igor OS Morning Brief"
-hermes cron create "0 21 * * *" "Run evening capture. Ask the capture questions and wait for my reply if needed." --skill evening --deliver telegram --workdir "$(pwd)/igor-os" --name "Igor OS Evening Capture"
-hermes cron create "0 10 * * 0" "Create the Igor OS weekly review." --skill weekly --deliver telegram --workdir "$(pwd)/igor-os" --name "Igor OS Weekly Review"
+hermes cron create "0 7 * * *" "Create today's Igor OS morning brief." --skill morning --deliver telegram:1321905 --workdir "$(pwd)/igor-os" --name "Igor OS Morning Brief"
+hermes cron create "0 21 * * *" "Run evening capture. Ask the capture questions and wait for my reply if needed." --skill evening --deliver telegram:1321905 --workdir "$(pwd)/igor-os" --name "Igor OS Evening Capture"
+hermes cron create "0 10 * * 0" "Create the Igor OS weekly review." --skill weekly --deliver telegram:1321905 --workdir "$(pwd)/igor-os" --name "Igor OS Weekly Review"
 ```
 
 The gateway must be running for cron jobs to fire.
@@ -191,7 +196,7 @@ Prefer long polling for a simple VPS. Use Telegram webhook mode only if you alre
 5. Create a test cron job:
 
    ```bash
-   hermes cron create "once in 2m" "Send a short Igor OS cron test." --skill morning --deliver telegram --workdir "$(pwd)/igor-os" --name "Igor OS Cron Test"
+   hermes cron create "once in 2m" "Send a short Igor OS cron test." --skill morning --deliver telegram:1321905 --workdir "$(pwd)/igor-os" --name "Igor OS Cron Test"
    ```
 
 6. Confirm only your allowed Telegram user can interact with the bot.

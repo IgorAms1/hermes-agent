@@ -125,10 +125,46 @@ def _resolve_codex_usage_url(base_url: str) -> str:
 
 
 def _fetch_codex_account_usage() -> Optional[AccountUsageSnapshot]:
-    creds = resolve_codex_runtime_credentials(refresh_if_expiring=True)
-    token_data = _read_codex_tokens()
-    tokens = token_data.get("tokens") or {}
-    account_id = str(tokens.get("account_id", "") or "").strip() or None
+    """Fetch ChatGPT/Codex account usage limits.
+
+    Hermes has two Codex auth shapes in the wild:
+    1. legacy provider state: providers.openai-codex.tokens;
+    2. current credential pool: credential_pool.openai-codex[].
+
+    The runtime resolver still supports the legacy shape, while `hermes auth add
+    openai-codex` writes to the pool. Prefer the resolver, then fall back to the
+    newest/highest-priority pooled OAuth credential so `/usage` and cron reports
+    work after a fresh device-code login.
+    """
+    account_id = None
+    try:
+        creds = resolve_codex_runtime_credentials(refresh_if_expiring=True)
+        token_data = _read_codex_tokens()
+        tokens = token_data.get("tokens") or {}
+        account_id = str(tokens.get("account_id", "") or "").strip() or None
+    except Exception:
+        from agent.credential_pool import load_pool
+
+        pool = load_pool("openai-codex")
+        if not pool or not pool.has_credentials():
+            return None
+        entries = list(pool.entries())
+        if not entries:
+            return None
+        entry = max(
+            entries,
+            key=lambda e: (
+                int(getattr(e, "priority", 0) or 0),
+                str(getattr(e, "last_refresh", "") or ""),
+            ),
+        )
+        api_key = str(getattr(entry, "runtime_api_key", None) or getattr(entry, "access_token", "") or "").strip()
+        if not api_key:
+            return None
+        creds = {
+            "api_key": api_key,
+            "base_url": getattr(entry, "base_url", None) or "https://chatgpt.com/backend-api/codex",
+        }
     headers = {
         "Authorization": f"Bearer {creds['api_key']}",
         "Accept": "application/json",

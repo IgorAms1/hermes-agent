@@ -11537,6 +11537,21 @@ class GatewayRunner:
             provider = provider or persisted.get("billing_provider")
             base_url = base_url or persisted.get("billing_base_url")
 
+        # If no live agent/session billing row exists yet, fall back to the
+        # configured default provider so `/usage` can still show account limits
+        # on demand (notably ChatGPT/Codex 5h + weekly quotas).
+        if not provider:
+            try:
+                from hermes_cli.config import read_raw_config
+
+                raw_config = read_raw_config() or {}
+                model_config = raw_config.get("model") if isinstance(raw_config, dict) else {}
+                if isinstance(model_config, dict):
+                    provider = model_config.get("provider") or provider
+                    base_url = model_config.get("base_url") or base_url
+            except Exception:
+                pass
+
         # Fetch account usage off the event loop so slow provider APIs don't
         # block the gateway. Failures are non-fatal -- account_lines stays [].
         account_lines: list[str] = []
