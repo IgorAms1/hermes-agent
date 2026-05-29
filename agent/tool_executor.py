@@ -30,6 +30,7 @@ from agent.display import (
     _detect_tool_failure,
 )
 from agent.tool_guardrails import ToolGuardrailDecision
+from agent.tool_risk_registry import log_tool_risk_audit
 from agent.tool_dispatch_helpers import (
     _is_destructive_command,
     _is_multimodal_tool_result,
@@ -139,6 +140,14 @@ def execute_tool_calls_concurrent(agent, assistant_message, messages: list, effe
             if not guardrail_decision.allows_execution:
                 block_result = agent._guardrail_block_result(guardrail_decision)
                 blocked_by_guardrail = True
+
+        log_tool_risk_audit(
+            logger,
+            function_name,
+            function_args,
+            source_context=getattr(agent, "platform", "unknown") or "unknown",
+            execution_blocked=block_result is not None,
+        )
 
         parsed_calls.append((tool_call, function_name, function_args, block_result, blocked_by_guardrail))
 
@@ -519,6 +528,14 @@ def execute_tool_calls_sequential(agent, assistant_message, messages: list, effe
                 _guardrail_block_decision = guardrail_decision
 
         _execution_blocked = _block_msg is not None or _guardrail_block_decision is not None
+
+        log_tool_risk_audit(
+            logger,
+            function_name,
+            function_args,
+            source_context=getattr(agent, "platform", "unknown") or "unknown",
+            execution_blocked=_execution_blocked,
+        )
 
         if _execution_blocked:
             # Tool blocked by plugin or guardrail policy — skip counters,
