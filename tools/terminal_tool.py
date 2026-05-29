@@ -50,6 +50,7 @@ from typing import Optional, Dict, Any, List
 from utils import env_var_enabled
 
 logger = logging.getLogger(__name__)
+from agent.sensitive_access import log_sensitive_access_audit
 
 
 # ---------------------------------------------------------------------------
@@ -1709,6 +1710,13 @@ def terminal_tool(
                 "error": f"Invalid command: expected string, got {type(command).__name__}",
                 "status": "error",
             }, ensure_ascii=False)
+
+        log_sensitive_access_audit(
+            logger,
+            "terminal.command",
+            command,
+            metadata={"tool": "terminal"},
+        )
 
         # Get configuration
         config = _get_env_config()

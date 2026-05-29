@@ -17,6 +17,7 @@ from tools.file_operations import (
 )
 from tools import file_state
 from agent.redact import redact_sensitive_text
+from agent.sensitive_access import log_sensitive_access_audit
 
 logger = logging.getLogger(__name__)
 
@@ -461,6 +462,12 @@ def read_file_tool(path: str, offset: int = 1, limit: int = 500, task_id: str = 
             })
 
         _resolved = _resolve_path_for_task(path, task_id)
+        log_sensitive_access_audit(
+            logger,
+            "read_file.path",
+            str(_resolved),
+            metadata={"tool": "read_file"},
+        )
 
         # ── Binary file guard ─────────────────────────────────────────
         # Block binary files by extension (no I/O).
@@ -950,6 +957,19 @@ def search_tool(pattern: str, target: str = "content", path: str = ".",
     """Search for content or files."""
     try:
         offset, limit = normalize_search_pagination(offset, limit)
+        log_sensitive_access_audit(
+            logger,
+            "search_files.path",
+            str(path or ""),
+            metadata={"tool": "search_files", "field": "path"},
+        )
+        if file_glob:
+            log_sensitive_access_audit(
+                logger,
+                "search_files.file_glob",
+                str(file_glob),
+                metadata={"tool": "search_files", "field": "file_glob"},
+            )
 
         # Track searches to detect *consecutive* repeated search loops.
         # Include pagination args so users can page through truncated
