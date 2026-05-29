@@ -55,6 +55,58 @@ _SECRET_TEXT_PATTERNS: tuple[tuple[re.Pattern[str], str, str], ...] = (
 )
 
 
+
+VALID_SENSITIVE_ACCESS_MODES = frozenset({"audit", "confirm", "block"})
+
+
+def get_sensitive_access_mode() -> str:
+    """Return configured sensitive-access mode.
+
+    Default is ``audit`` so existing Hermes behavior is unchanged unless the
+    user explicitly opts into enforcement. ``confirm`` is intentionally
+    audit-equivalent for now; deterministic confirmation UX will be wired in a
+    later PR without changing this config surface.
+    """
+
+    try:
+        from hermes_cli.config import load_config
+
+        security = load_config().get("security", {}) or {}
+    except Exception:
+        security = {}
+
+    configured: Any = None
+    nested = security.get("sensitive_access")
+    if isinstance(nested, Mapping):
+        configured = nested.get("mode")
+    if configured is None:
+        configured = security.get("sensitive_access_mode")
+
+    mode = str(configured or "audit").strip().lower()
+    if mode not in VALID_SENSITIVE_ACCESS_MODES:
+        return "audit"
+    return mode
+
+
+def should_block_sensitive_access(value: str, *, mode: str | None = None) -> bool:
+    """Return True only when explicit block mode sees a sensitive reference."""
+
+    effective_mode = (mode or get_sensitive_access_mode()).strip().lower()
+    return effective_mode == "block" and bool(find_sensitive_references(value))
+
+
+def sensitive_access_denied_result(surface: str, value: str) -> dict[str, Any]:
+    """Build a denial payload without raw paths, commands, or code."""
+
+    refs = find_sensitive_references(value)
+    return {
+        "success": False,
+        "error": "Sensitive access blocked by security.sensitive_access.mode=block.",
+        "surface": surface,
+        "reference_count": len(refs),
+        "reference_categories": sorted({ref.category for ref in refs}),
+    }
+
 def _hash_reference(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8", errors="replace")).hexdigest()
 
@@ -193,5 +245,8 @@ __all__ = [
     "build_sensitive_access_audit_event",
     "classify_sensitive_path",
     "find_sensitive_references",
+    "get_sensitive_access_mode",
+    "sensitive_access_denied_result",
+    "should_block_sensitive_access",
     "log_sensitive_access_audit",
 ]

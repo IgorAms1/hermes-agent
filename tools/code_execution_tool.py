@@ -52,7 +52,11 @@ from typing import Any, Dict, List, Optional
 # ``_use_tcp_rpc`` in ``_execute_local`` below.  That makes execute_code
 # available on every platform Hermes itself runs on.
 logger = logging.getLogger(__name__)
-from agent.sensitive_access import log_sensitive_access_audit
+from agent.sensitive_access import (
+    log_sensitive_access_audit,
+    sensitive_access_denied_result,
+    should_block_sensitive_access,
+)
 
 SANDBOX_AVAILABLE = True
 
@@ -1070,6 +1074,8 @@ def execute_code(
         code,
         metadata={"tool": "execute_code"},
     )
+    if should_block_sensitive_access(code):
+        return json.dumps(sensitive_access_denied_result("execute_code.code", code), ensure_ascii=False)
 
     # Dispatch: remote backends use file-based RPC, local uses UDS
     from tools.terminal_tool import _get_env_config

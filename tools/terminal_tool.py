@@ -50,7 +50,11 @@ from typing import Optional, Dict, Any, List
 from utils import env_var_enabled
 
 logger = logging.getLogger(__name__)
-from agent.sensitive_access import log_sensitive_access_audit
+from agent.sensitive_access import (
+    log_sensitive_access_audit,
+    sensitive_access_denied_result,
+    should_block_sensitive_access,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -1717,6 +1721,14 @@ def terminal_tool(
             command,
             metadata={"tool": "terminal"},
         )
+        if should_block_sensitive_access(command):
+            return json.dumps({
+                "output": "",
+                "exit_code": -1,
+                "error": sensitive_access_denied_result("terminal.command", command)["error"],
+                "status": "error",
+                "security": sensitive_access_denied_result("terminal.command", command),
+            }, ensure_ascii=False)
 
         # Get configuration
         config = _get_env_config()

@@ -17,7 +17,11 @@ from tools.file_operations import (
 )
 from tools import file_state
 from agent.redact import redact_sensitive_text
-from agent.sensitive_access import log_sensitive_access_audit
+from agent.sensitive_access import (
+    log_sensitive_access_audit,
+    sensitive_access_denied_result,
+    should_block_sensitive_access,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -468,6 +472,8 @@ def read_file_tool(path: str, offset: int = 1, limit: int = 500, task_id: str = 
             str(_resolved),
             metadata={"tool": "read_file"},
         )
+        if should_block_sensitive_access(str(_resolved)):
+            return json.dumps(sensitive_access_denied_result("read_file.path", str(_resolved)), ensure_ascii=False)
 
         # ── Binary file guard ─────────────────────────────────────────
         # Block binary files by extension (no I/O).
@@ -970,6 +976,10 @@ def search_tool(pattern: str, target: str = "content", path: str = ".",
                 str(file_glob),
                 metadata={"tool": "search_files", "field": "file_glob"},
             )
+        if should_block_sensitive_access(str(path or "")):
+            return json.dumps(sensitive_access_denied_result("search_files.path", str(path or "")), ensure_ascii=False)
+        if file_glob and should_block_sensitive_access(str(file_glob)):
+            return json.dumps(sensitive_access_denied_result("search_files.file_glob", str(file_glob)), ensure_ascii=False)
 
         # Track searches to detect *consecutive* repeated search loops.
         # Include pagination args so users can page through truncated

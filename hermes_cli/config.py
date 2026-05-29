@@ -1466,6 +1466,9 @@ DEFAULT_CONFIG = {
         "tirith_path": "tirith",
         "tirith_timeout": 5,
         "tirith_fail_open": True,
+        "sensitive_access": {
+            "mode": "audit",  # audit | confirm | block; confirm is audit-only until confirmation UX is wired
+        },
         "website_blocklist": {
             "enabled": False,
             "domains": [],
@@ -4374,6 +4377,8 @@ _SECURITY_COMMENT = """
 #   tirith_path: "tirith"
 #   tirith_timeout: 5
 #   tirith_fail_open: true
+#   sensitive_access:
+#     mode: audit  # audit | confirm | block
 """
 
 _FALLBACK_COMMENT = """
@@ -4408,6 +4413,8 @@ _COMMENTED_SECTIONS = """
 #
 # security:
 #   redact_secrets: true
+#   sensitive_access:
+#     mode: audit  # audit | confirm | block
 
 # ── Fallback Model ────────────────────────────────────────────────────
 # Automatic provider failover when primary is unavailable.

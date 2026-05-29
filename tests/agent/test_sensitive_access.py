@@ -55,3 +55,27 @@ def test_non_sensitive_values_return_no_event():
     assert classify_sensitive_path("docs/plans/example.md") is None
     assert find_sensitive_references("pytest tests/agent/test_sensitive_access.py") == []
     assert build_sensitive_access_audit_event("terminal.command", "pytest -q") is None
+
+
+def test_sensitive_access_block_mode_only_blocks_sensitive_values():
+    from agent.sensitive_access import should_block_sensitive_access
+
+    assert should_block_sensitive_access("cat ~/.hermes/.env", mode="block") is True
+    assert should_block_sensitive_access("cat docs/README.md", mode="block") is False
+    assert should_block_sensitive_access("cat ~/.hermes/.env", mode="audit") is False
+    assert should_block_sensitive_access("cat ~/.hermes/.env", mode="confirm") is False
+
+
+def test_sensitive_access_denial_payload_omits_raw_values():
+    from agent.sensitive_access import sensitive_access_denied_result
+
+    payload = sensitive_access_denied_result(
+        "terminal.command",
+        "cat ~/.hermes/google_token.json && echo sk-secret-value",
+    )
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+
+    assert payload["success"] is False
+    assert "google_oauth_token" in payload["reference_categories"]
+    assert "~/.hermes/google_token.json" not in encoded
+    assert "sk-secret-value" not in encoded
