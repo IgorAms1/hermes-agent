@@ -19,11 +19,14 @@ Before generating the brief, recall yesterday's relevant updates AND Hindsight d
 
 ### A) Session search (standard)
 
-1. Call `session_search` with no query and `limit: 5` to list recent sessions. Use the returned timestamps to identify sessions from yesterday or the latest prior Telegram session.
-2. Call `session_search` with a broad query such as `completed OR done OR finished OR отправил OR завершил OR сделал OR закрыл OR tomorrow OR завтра OR перенос OR cancel OR отмена OR забыл OR коррекция OR correction OR поправка OR неверно OR неправильно`, `role_filter: "user,assistant"`, and `limit: 5`.
-3. If summaries are too compressed, use `delegate_task` with `toolsets: ["terminal", "file"]` and context pointing to `$HERMES_HOME/sessions/` plus the relevant session id. Ask it to extract only user-reported completions and priorities for today. **Note: `delegate_task` has a 600s timeout — if it fails, fall back to direct `execute_code` + `read_file` from JSONL files.**
+1. For a quick lookup, call `session_search` with no query and `limit: 5` to list recent sessions. Use the returned timestamps to identify sessions from yesterday or the latest prior Telegram session.
+2. For broad morning recall, prefer the deterministic extractor instead of chaining many `session_search` calls:
+   ```bash
+   /home/igor1/hermes-agent/igor-os/scripts/session_extract.py --date yesterday --roles user,assistant --query "completed OR done OR finished OR отправил OR завершил OR сделал OR закрыл OR tomorrow OR завтра OR перенос OR cancel OR отмена OR забыл OR коррекция OR correction OR поправка OR неверно OR неправильно" --limit 12 --max-chars 350 --pretty
+   ```
+3. Use `session_search` only when you need to scroll a specific known session, and obey the session-local ID guard in Pitfalls below.
 4. Only carry forward items that are **confirmed unfinished** — if Igor said he did it, it is done.
-5. **CRITICAL: Do NOT include a "Corrections" / "Коррекции" section in the brief.** If session_search finds corrections Igor made to previous briefs (e.g., "Bogdan call was Monday not Thursday"), those corrections have already been applied to the current context. Listing them again is noise. Silently absorb corrections into the correct sections of the new brief without flagging them. The only exception: if Igor gave a correction TODAY (in the current session), acknowledge it once then move on.
+5. **CRITICAL: Do NOT include a "Corrections" / "Коррекции" section in the brief.** If extraction/session_search finds corrections Igor made to previous briefs (e.g., "Bogdan call was Monday not Thursday"), those corrections have already been applied to the current context. Listing them again is noise. Silently absorb corrections into the correct sections of the new brief without flagging them. The only exception: if Igor gave a correction TODAY (in the current session), acknowledge it once then move on.
 
 ### B) Hindsight recall — MANDATORY
 

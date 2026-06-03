@@ -65,10 +65,13 @@ Before asking any questions, first scan the current visible Telegram conversatio
 
    **⚠️ Partial timeout pattern:** Hindsight can respond to *some* queries while timing out on others (especially the first query in a batch). If you batch multiple queries and some time out at 10s, retry the failed ones individually with `timeout=30` — they often succeed on the second attempt. Only skip entirely if *all* queries time out at 30s.
 
-2. Call `session_search` with `query: "completed OR done OR finished OR отправил OR завершил OR сделал OR закрыл"`, `role_filter: "user,assistant"`, and `limit: 5`.
-3. Call `session_search` with `query: "tomorrow OR завтра OR перенос OR cancel OR отмена"`, `role_filter: "user,assistant"`, and `limit: 5`.
-4. Use returned timestamps and summaries to keep only today's relevant updates.
-5. If summaries are too compressed OR keyword searches return only older sessions (same-day indexing lag), fall back to direct session file extraction: use `execute_code` to list `$HERMES_HOME/sessions/` (usually `~/.hermes/sessions/`) for today's date prefix, then `read_file` to pull content from each matching JSONL file. Extract user messages with the pattern in `references/session-jsonl-parsing.md`. This is more reliable than delegate_task, which can time out at 600s.
+2. For same-day factual extraction, prefer the deterministic helper over multiple `session_search` calls:
+   ```bash
+   /home/igor1/hermes-agent/igor-os/scripts/session_extract.py --date today --roles user,assistant --query "completed OR done OR finished OR отправил OR завершил OR сделал OR закрыл OR tomorrow OR завтра OR перенос OR cancel OR отмена" --limit 20 --max-chars 350 --pretty
+   ```
+3. Use returned raw messages to keep only today's relevant updates.
+4. Use `session_search` only for a narrow follow-up query or to scroll a known valid session. Do not reuse `around_message_id` from another session.
+5. If helper output is empty, then fall back to `session_search` with small limits; do not use `delegate_task` for session crawling because it can time out.
 
 Voice transcriptions are often buried in user messages that summaries compress.
 
@@ -106,8 +109,8 @@ Example:
 - **Cron vs interactive mode**: the skill's Procedure section (step 2) asks questions to Igor. When running as a nightly cron (no user present), skip the questions — compile the summary from today's data directly. Only ask questions on manual `/evening` invocations where Igor is actually there to answer.
 - **Cron delivery target must be specific. If setting up the evening cron, `deliver` must be `telegram:<chat_id>` (e.g., `telegram:1321905`), not bare `telegram`. Bare platform name causes silent delivery failure with `no delivery target resolved for deliver=telegram`. Combined with the NEVER SILENT rule above, this is a hard requirement for the cron to actually reach Igor.
 - **Voice transcription errors are common.** Cross-reference transcribed names against known context in memory.
-- **`session_search` may miss same-day sessions.** The FTS index may not have ingested today's sessions yet when the evening cron fires. If keyword searches return only older sessions, fall back to direct file listing: list `$HERMES_HOME/sessions/` (usually `~/.hermes/sessions/`) for today's date prefix (`YYYYMMDD*`), then use `execute_code` + `read_file` to extract user messages from those JSON/JSONL files. Session files can be either `.json` (JSON object with `messages` array) or `.jsonl` (one JSON object per line) — both contain `role` + `content` fields. Parse both formats. See `references/session-jsonl-parsing.md` for patterns.
-- **`delegate_task` can time out on session extraction.** The 600s timeout makes delegate_task unreliable for crawling session files. Prefer the direct `execute_code` + `read_file` + regex approach documented in `references/session-jsonl-parsing.md` instead of step 4's fallback to delegate_task.
+- **`session_search` may miss same-day sessions.** The FTS index may not have ingested today's sessions yet when the evening cron fires. Prefer `/home/igor1/hermes-agent/igor-os/scripts/session_extract.py --date today ...`; it reads `.json`/`.jsonl` session files directly, filters internal skill prompts, and emits compact JSON. Use `session_search` only as a narrow fallback.
+- **`delegate_task` can time out on session extraction.** The 600s timeout makes delegate_task unreliable for crawling session files. Prefer `igor-os/scripts/session_extract.py` or the lower-level patterns in `references/session-jsonl-parsing.md`.
 - **Performance: parallelize independent calls.** When calling `session_search` for multiple queries, batch them in parallel (not sequential). Prefer `execute_code` for 3+ operations. Don't `session_search` if the answer is already in context — trust context first.
 - **Memory architecture:** partner/project details → files at `~/.hermes/context/` or `igor-os/context/`. Memory gets only compact pointers. See `references/memory-architecture.md` in the morning skill.
 - **Don't hallucinate completions.** Не отмечать задачу как сделанную, пока Igor не подтвердил выполнение. «Написал» ≠ «отправил». «Надо купить» ≠ «купил». «Черновик готов» ≠ «сообщение ушло». Отсутствие исправления ≠ подтверждение. Если нет явного «сделал/готов/отправил» — не ставь галку.
