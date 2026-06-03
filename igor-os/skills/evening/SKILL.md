@@ -35,6 +35,8 @@ Before asking any questions, first scan the current visible Telegram conversatio
 
 **Never treat your prior cron summaries as ground truth.** The evening capture from yesterday, the heartbeat pulse, the morning brief — these are your *interpretations*, not evidence. If a fact matters (who reminded whom, what was completed vs planned), verify it against the raw user messages in the session files.
 
+**Accuracy beats latency for `/evening` factual recall.** The evening capture is allowed to spend extra time scanning today's raw sessions. Hindsight is durable background context, not the source of truth for what happened today.
+
 **Mandatory first step for any multi-day or cross-reference context:** Run `python3 ~/.hermes/scripts/session_week_summary.py --days=3` to see Igor's actual messages with timestamps. Then cross-check your own summaries against this raw view.
 
 ### Standard recall steps
@@ -65,13 +67,17 @@ Before asking any questions, first scan the current visible Telegram conversatio
 
    **Performance rule:** keep Hindsight recall targeted. Use `n_results: 3`, query only the named partner/project/person, and avoid broad catch-all recalls. If a recall times out at 10s, retry only that failed query once with `timeout=30`; do not rerun successful queries. If retry fails, skip that context and continue the evening capture.
 
-2. For same-day factual extraction, prefer the deterministic helper over multiple `session_search` calls:
+2. For same-day factual extraction, prefer the deterministic helper over multiple `session_search` calls. Start with a wide signal query:
    ```bash
-   /home/igor1/hermes-agent/igor-os/scripts/session_extract.py --date today --roles user,assistant --query "completed OR done OR finished OR отправил OR завершил OR сделал OR закрыл OR tomorrow OR завтра OR перенос OR cancel OR отмена" --limit 20 --max-chars 350 --pretty
+   /home/igor1/hermes-agent/igor-os/scripts/session_extract.py --date today --roles user,assistant --query "completed OR done OR finished OR отправил OR завершил OR сделал OR закрыл OR tomorrow OR завтра OR перенос OR cancel OR отмена" --limit 40 --session-limit 12 --max-chars 500 --pretty
    ```
-3. Use returned raw messages to keep only today's relevant updates.
-4. Use `session_search` only for a narrow follow-up query or to scroll a known valid session. Do not reuse `around_message_id` from another session.
-5. If helper output is empty, then fall back to `session_search` with small limits; do not use `delegate_task` for session crawling because it can time out.
+3. If the wide query seems sparse, Igor sent many voice notes, or the day was complex, run a second pass without `--query` and inspect raw messages:
+   ```bash
+   /home/igor1/hermes-agent/igor-os/scripts/session_extract.py --date today --roles user,assistant --limit 80 --session-limit 12 --max-chars 350 --pretty
+   ```
+4. Use returned raw messages to keep only today's relevant updates.
+5. Use `session_search` only for a narrow follow-up query or to scroll a known valid session. Do not reuse `around_message_id` from another session.
+6. If helper output is empty, then fall back to `session_search` with small limits; do not use `delegate_task` for session crawling because it can time out.
 
 Voice transcriptions are often buried in user messages that summaries compress.
 

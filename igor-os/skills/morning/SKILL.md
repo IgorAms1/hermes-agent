@@ -15,18 +15,24 @@ Use for `/morning` or when Igor asks for a daily briefing.
 
 ## Pre-Flight: Yesterday's Session + Hindsight (mandatory)
 
-Before generating the brief, recall yesterday's relevant updates AND Hindsight durable facts:
+Before generating the brief, recall yesterday's relevant updates AND Hindsight durable facts.
 
-### A) Session search (standard)
+**Accuracy beats latency for `/morning` factual recall.** For what happened yesterday or what Igor explicitly corrected, raw session files are authoritative. Hindsight is background context only; it must not override fresher session facts.
+
+### A) Raw session extraction first
 
 1. For a quick lookup, call `session_search` with no query and `limit: 5` to list recent sessions. Use the returned timestamps to identify sessions from yesterday or the latest prior Telegram session.
-2. For broad morning recall, prefer the deterministic extractor instead of chaining many `session_search` calls:
+2. For broad morning recall, prefer the deterministic extractor instead of chaining many `session_search` calls. Start with a wide query:
    ```bash
-   /home/igor1/hermes-agent/igor-os/scripts/session_extract.py --date yesterday --roles user,assistant --query "completed OR done OR finished OR отправил OR завершил OR сделал OR закрыл OR tomorrow OR завтра OR перенос OR cancel OR отмена OR забыл OR коррекция OR correction OR поправка OR неверно OR неправильно" --limit 12 --max-chars 350 --pretty
+   /home/igor1/hermes-agent/igor-os/scripts/session_extract.py --date yesterday --roles user,assistant --query "completed OR done OR finished OR отправил OR завершил OR сделал OR закрыл OR tomorrow OR завтра OR перенос OR cancel OR отмена OR забыл OR коррекция OR correction OR поправка OR неверно OR неправильно" --limit 30 --session-limit 12 --max-chars 500 --pretty
    ```
-3. Use `session_search` only when you need to scroll a specific known session, and obey the session-local ID guard in Pitfalls below.
-4. Only carry forward items that are **confirmed unfinished** — if Igor said he did it, it is done.
-5. **CRITICAL: Do NOT include a "Corrections" / "Коррекции" section in the brief.** If extraction/session_search finds corrections Igor made to previous briefs (e.g., "Bogdan call was Monday not Thursday"), those corrections have already been applied to the current context. Listing them again is noise. Silently absorb corrections into the correct sections of the new brief without flagging them. The only exception: if Igor gave a correction TODAY (in the current session), acknowledge it once then move on.
+3. If the wide query seems sparse or Igor had a complex day, run a second pass without `--query` and inspect raw messages:
+   ```bash
+   /home/igor1/hermes-agent/igor-os/scripts/session_extract.py --date yesterday --roles user,assistant --limit 50 --session-limit 12 --max-chars 350 --pretty
+   ```
+4. Use `session_search` only when you need to scroll a specific known session, and obey the session-local ID guard in Pitfalls below.
+5. Only carry forward items that are **confirmed unfinished** — if Igor said he did it, it is done.
+6. **CRITICAL: Do NOT include a "Corrections" / "Коррекции" section in the brief.** If extraction/session_search finds corrections Igor made to previous briefs (e.g., "Bogdan call was Monday not Thursday"), those corrections have already been applied to the current context. Listing them again is noise. Silently absorb corrections into the correct sections of the new brief without flagging them. The only exception: if Igor gave a correction TODAY (in the current session), acknowledge it once then move on.
 
 ### B) Hindsight recall — targeted and bounded
 
@@ -77,10 +83,10 @@ Hindsight stores partner details, call extracts, project decisions, and therapy 
 
 **⚠️ CRITICAL — added 31 May 2026 after Igor caught stale facts in the brief.**
 
-Hindsight stores durable facts, but those facts can go stale (book completed, health test done, project status changed). The session_search from step A catches corrections Igor made ("забыл что X", "ты опять тупишь — я уже дочитал").
+Hindsight stores durable facts, but those facts can go stale (book completed, health test done, project status changed). Raw session extraction from step A catches corrections Igor made ("забыл что X", "ты опять тупишь — я уже дочитал").
 
 After both A and B complete:
-1. Scan session_search results for any user messages containing correction signals: "забыл", "неверно", "неправильно", "уже", "ты опять", "коррекция", "поправка"
+1. Scan extraction/session results for any user messages containing correction signals: "забыл", "неверно", "неправильно", "уже", "ты опять", "коррекция", "поправка"
 2. For each correction found, check if a corresponding hindsight entry exists
 3. If it does, the hindsight entry is stale — note it for replacement. Do NOT include the stale fact in the brief. The brief should use the CORRECTED fact.
 4. If multiple corrections for the same entity (e.g., book status corrected twice), the most recent one wins.
@@ -91,7 +97,7 @@ After both A and B complete:
 - Health test submitted but still listed as "to do"
 - Event date wrong in durable memory
 
-Example: Igor says «Обещание на рассвете я дочитал неделю назад — ты опять тупишь». session_search catches "дочитал" + "ты опять тупишь". hindsight_recall might return "currently reading Обещание". Cross-reference flags the contradiction → session_search wins → brief uses the corrected status.
+Example: Igor says «Обещание на рассвете я дочитал неделю назад — ты опять тупишь». Session extraction catches "дочитал" + "ты опять тупишь". hindsight_recall might return "currently reading Обещание". Cross-reference flags the contradiction → raw session fact wins → brief uses the corrected status.
 
 Skip this: You will assign him completed tasks and suggest books he's already finished.
 
