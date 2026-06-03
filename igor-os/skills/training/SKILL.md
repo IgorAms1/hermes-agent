@@ -95,7 +95,20 @@ Track:
 - cue that helped;
 - one repeatable next drill.
 
-### BJJ Log Protocol
+### Return-to-Sport After Injury (MTB / BJJ)
+
+Igor's pattern: all-or-nothing. After crash/injury, shame cycle activates. See full protocol in `references/return-to-sport-psychology.md`.
+
+**Key rule for MTB:** technique not flowing → no new elements → one easy victory lap → done.
+**Key rule for BJJ:** first session back = technique-only, no sparring. 2 sessions/week max for first 2 weeks.
+
+When Igor says «I'll be careful / I know my level» — flag the danger signal. This exact thought led to the pillow crash. Offer a one-session experiment instead of arguing.
+
+### The «100% confident» trap
+
+Fear is Igor's only governor between 80% and 120%. When he sits on the bike and fear vanishes, he rides past his ceiling. Recognize this feeling as a **danger signal**, not a green light.
+
+## BJJ Log Protocol
 
 Track:
 - position/theme;

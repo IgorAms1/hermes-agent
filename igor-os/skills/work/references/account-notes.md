@@ -1,61 +1,65 @@
-# Account Notes Pattern
+# Account Notes — Partner Call Follow-Up Storage
 
-Use this when Igor shares partner/account call extracts that are useful for future call prep but should not become daily todos.
+## Problem
 
-## Trigger
+After extracting a partner call transcript, the default action is to dump every identified follow-up into Igor's daily todo. This creates overwhelm, CRM-dread, and eventually the whole account context gets lost because each item was a tiny todo that got cancelled.
 
-- Igor says extracted follow-ups should not appear every day.
-- Partner call notes contain useful future topics, open questions, or relationship context.
-- The next useful moment is "when I have a call with this partner", not "today".
+## Solution
 
-## Storage
+Store extracted partner/account context as **account notes** in `igor-os/accounts/<account-slug>.md`, not in daily todo.
 
-Create or update:
+## When to use
 
-```text
-/home/igor1/hermes-agent/igor-os/accounts/<account-slug>.md
-```
+- Igor says "не выдавай мне все эти задачи каждый день" or similar sentiment after a partner call extract.
+- The extracted items are medium-term (next call, next week, end of quarter) rather than "do today".
+- The items are prep/context for the *next* call, not actions Igor must execute *right now*.
 
-Suggested structure:
+## When NOT to use
 
-```markdown
-# <Account> — account notes
+- The item is a real, concrete action for today (e.g., "send this email right after the call", "update CRM now").
+- Igor explicitly asks to add something to his todo list.
 
-Purpose: keep <Account>-specific topics out of Igor's daily todo list. Surface these notes when Igor says he has a call/QBR/follow-up with <Account>.
+## Procedure
 
-Last updated: YYYY-MM-DD
+1. After extracting a partner call, group extracted items:
+   - **Today actions** (max 1-2) — add to daily todo.
+   - **Next-call prep** — store in account note.
+   - **Background / FYI** — store in account note, tagged as background.
 
-## Current call-prep topics
+2. Account note structure:
+   ```markdown
+   # <Partner name> — account notes
+   Last updated: YYYY-MM-DD
+   
+   ## Pipeline / opportunities
+   - topic — status — prep reminder
+   
+   ## Product / process guidance covered
+   - fact or instruction
+   
+   ## Portal feedback to collect / escalate
+   - item
+   
+   ## Partner enablement / training status
+   - item
+   
+   ## How to use this note
+   When Igor says he has a call: ask type of call, surface 3-5 relevant topics,
+   split into: must raise / optional / background.
+   ```
 
-### Pipeline / opportunities
-- **Opportunity name**
-  - Status / signal.
-  - Prep reminder.
+3. Surface rules:
+   - On next call mention, ask what kind of call (pipeline, enablement, portal feedback, QBR, quick sync).
+   - Show 3-5 topics max, split by priority.
+   - Do not dump everything.
+   - Convert an item to daily todo only when Igor explicitly asks.
 
-### Process / enablement
-- Topic.
+## Example
 
-### Open questions
-- Question.
+See `igor-os/accounts/logicworks.md` for a worked example.
 
-## How to use this note
+## Pitfalls
 
-When Igor says he has a <Account> call:
-1. Do not dump every item as a todo list.
-2. Ask call type only if it materially changes prep.
-3. Surface 3-5 most relevant topics.
-4. Split into must raise today / optional if time / background only.
-5. Keep daily todo clean unless Igor explicitly asks to convert an item into an action.
-```
-
-## Todo hygiene
-
-If you already added account-specific items to the daily todo list and Igor corrects you:
-
-1. Move the content into the account note.
-2. Mark the todos cancelled with a short "MOVED TO <Account> account notes" label.
-3. Confirm the new retrieval behavior.
-
-## Pitfall
-
-Do not turn CRM/account context into Telegram-dread. Account notes are retrieval context for call prep, not a daily task tax.
+- Easy to revert to "just add to todo" out of habit. The account note replaces the todo for partner-specific items.
+- Account notes can accumulate stale topics. If a topic is >2 months old and Igor never raised it, it's probably dead — don't auto-surface.
+- One account note per partner, not per call session. Update the same file.

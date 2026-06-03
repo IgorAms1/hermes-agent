@@ -26,11 +26,16 @@ logger = logging.getLogger(__name__)
 # Context files to look for in subdirectories, in priority order.
 # Same filenames as prompt_builder.py but we load ALL found (not first-wins)
 # since different subdirectories may use different conventions.
-_HINT_FILENAMES = [
-    "AGENTS.md", "agents.md",
-    "CLAUDE.md", "claude.md",
-    ".cursorrules",
-]
+# Can be overridden via HERMES_MD_NAMES env var (comma-separated).
+_env_md_names = os.environ.get("HERMES_MD_NAMES")
+if _env_md_names:
+    _HINT_FILENAMES = [name.strip() for name in _env_md_names.split(",") if name.strip()]
+else:
+    _HINT_FILENAMES = [
+        "AGENTS.md", "agents.md",
+        "CLAUDE.md", "claude.md",
+        ".cursorrules",
+    ]
 
 # Maximum chars per hint file to prevent context bloat
 _MAX_HINT_CHARS = 8_000

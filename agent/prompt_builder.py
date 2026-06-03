@@ -86,7 +86,8 @@ def _find_git_root(start: Path) -> Optional[Path]:
     return None
 
 
-_HERMES_MD_NAMES = (".hermes.md", "HERMES.md")
+_HERMES_MD_NAMES = os.environ.get("HERMES_MD_NAMES", ".hermes.md,HERMES.md").split(",")
+_HERMES_MD_NAMES = tuple(name.strip() for name in _HERMES_MD_NAMES if name.strip())
 
 
 def _find_hermes_md(cwd: Path) -> Optional[Path]:

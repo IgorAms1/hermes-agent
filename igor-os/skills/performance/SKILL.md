@@ -1,7 +1,7 @@
 ---
 name: performance
-description: Read-only Hermes performance status for Telegram: latency clues, slow/error tool calls, memory sizes, Hindsight health, cache/compression config, and practical tuning suggestions.
-version: 1.0.0
+description: "Read-only Hermes performance status for Telegram: latency clues, slow/error tool calls, memory sizes, Hindsight health, cache/compression config, and practical tuning suggestions."
+version: 1.0.1
 metadata:
   hermes:
     category: igor-os
@@ -105,8 +105,11 @@ PY
 ### Hindsight Health
 
 ```bash
-docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}' | grep -E '^hindsight|NAMES' || true
-curl -fsS http://127.0.0.1:8888/ >/dev/null && echo 'hindsight API: reachable' || echo 'hindsight API: not reachable'
+docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}' | grep -E '^hindsight|NAMES' || echo 'Hindsight not found as container (may be running as process)'
+# Hindsight API root (/) returns 404 -- use /v1/default/banks for health check
+curl -fsS http://127.0.0.1:8888/v1/default/banks >/dev/null && echo 'hindsight API: reachable' || echo 'hindsight API: not reachable'
+# Also check the UI
+curl -fsS -o /dev/null -w 'hindsight UI: HTTP %{http_code}\n' http://127.0.0.1:9999/ 2>/dev/null || echo 'hindsight UI: not reachable'
 ```
 
 ### Recent Tool Latency And Errors

@@ -12,7 +12,7 @@ Use when Igor says he did not receive `/weekly`, asks to "pull" last week, or re
    - health: training, back, kettlebell, mobility, BJJ/MTB
    - learning/hobbies: Dutch, microscopy, kombucha, chess
    - system: memory, skills, Codex, cron
-4. If summaries are compressed or contradictory, search again with narrower terms before writing the review.
+4. **Then search for daily streaks and insights** — these are not task completions and won't match keyword searches. Search for: `медитация OR chess OR streak OR streak OR шахмат OR Julia Reppel OR mobility OR интеграция OR integration OR идея OR insight OR MVP`. Also scan voice transcriptions — Igor's most valuable innovations (Claude+DOMO integration, Garmin analysis, re-framings) often come through voice, not text.
 5. Only mark items as pending when the transcript/session summary says they remained pending. If Igor reported completion, do not resurrect it.
 6. If evidence shows a delivery failure, mention it in one sentence; do not turn the weekly review into a debugging report.
 

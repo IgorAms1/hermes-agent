@@ -1,7 +1,7 @@
 ---
 name: evening
 description: Igor OS evening capture for daily logs, patterns, follow-ups, memory candidates, and tomorrow's task.
-version: 1.0.0
+version: 1.5.0
 metadata:
   hermes:
     category: igor-os
@@ -17,23 +17,101 @@ Use for `/evening` or daily shutdown logging.
 
 This is non-negotiable. **You must always deliver a response.** Even if Igor hasn't answered the capture questions yet, send the questions. Even if there's "nothing new," send a brief summary of what was already known and ask if anything changed. Never respond with [SILENT] or skip delivery. The evening cron is the last checkpoint of the day — if you go silent, task completions and corrections are lost.
 
+## Heartbeat Awareness
+
+Before the formal evening capture, check if today's midday heartbeat (14:30 CEST cron) already ran and delivered a pulse check.
+
+- If heartbeat ran and Igor responded with his state, **reference it**: "в heartbeat ты говорил что [state] — как сейчас?"
+- If heartbeat ran and he didn't respond, **skip the pulse re-check** — the evening capture is for facts, not a second pulse probe
+- If heartbeat failed to deliver (shouldn't happen, but check), do a brief pulse-first opening before tasks
+
+The heartbeat's job is state-checking. The evening capture's job is fact-capturing. Don't duplicate the pulse; build on it.
+
 ## Pre-Capture Search (mandatory)
 
 Before asking any questions, first scan the current visible Telegram conversation for updates Igor already mentioned. Then use `session_search` for prior sessions or same-day sessions that may have reset:
 
-1. Call `session_search` with `query: "completed OR done OR finished OR отправил OR завершил OR сделал OR закрыл"`, `role_filter: "user,assistant"`, and `limit: 5`.
-2. Call `session_search` with `query: "tomorrow OR завтра OR перенос OR cancel OR отмена"`, `role_filter: "user,assistant"`, and `limit: 5`.
-3. Use returned timestamps and summaries to keep only today's relevant updates.
-4. If summaries are too compressed OR keyword searches return only older sessions (same-day indexing lag), fall back to direct session file extraction: use `execute_code` to list `$HERMES_HOME/sessions/` (usually `~/.hermes/sessions/`) for today's date prefix, then `read_file` to pull content from each matching JSONL file. Extract user messages with the pattern in `references/session-jsonl-parsing.md`. This is more reliable than delegate_task, which can time out at 600s.
+### ⚠️ Source Primacy Rule
+
+**Never treat your prior cron summaries as ground truth.** The evening capture from yesterday, the heartbeat pulse, the morning brief — these are your *interpretations*, not evidence. If a fact matters (who reminded whom, what was completed vs planned), verify it against the raw user messages in the session files.
+
+**Mandatory first step for any multi-day or cross-reference context:** Run `python3 ~/.hermes/scripts/session_week_summary.py --days=3` to see Igor's actual messages with timestamps. Then cross-check your own summaries against this raw view.
+
+### Standard recall steps
+
+1. If Igor mentioned any partner, project, or person by name during the day (CloudFresh, Semaphore, Techsvit, Traco, Cloudflare, Jamf, Basalt, Denis, Katya, etc.), run a Hindsight recall for durable context:
+
+   Use `execute_code` to query Hindsight. **Prefer direct REST API** (more reliable than the client library):
+   ```python
+   import requests, json
+   r = requests.post('http://localhost:8888/v1/default/banks/igor-os/memories/recall',
+       json={'query': 'relevant topic', 'n_results': 3}, timeout=10)
+   facts = r.json().get('results', [])
+   for f in facts[:3]:
+       print(f['text'][:200])
+   ```
+
+   If the client library is needed (e.g., entity extraction), the accessor pattern differs from dict-style:
+   ```python
+   from hindsight_client import Hindsight
+   h = Hindsight(base_url='http://localhost:8888')
+   result = h.recall(query='topic', bank_id='igor-os')
+   # NOT result.get('matches') — use result.results (list of fact objects)
+   for f in result.results:
+       print(f.text[:200])
+   ```
+
+   Reference returned facts in the Daily Log or Follow-ups section. Skip gracefully if the API is unavailable.
+
+   **⚠️ Partial timeout pattern:** Hindsight can respond to *some* queries while timing out on others (especially the first query in a batch). If you batch multiple queries and some time out at 10s, retry the failed ones individually with `timeout=30` — they often succeed on the second attempt. Only skip entirely if *all* queries time out at 30s.
+
+2. Call `session_search` with `query: "completed OR done OR finished OR отправил OR завершил OR сделал OR закрыл"`, `role_filter: "user,assistant"`, and `limit: 5`.
+3. Call `session_search` with `query: "tomorrow OR завтра OR перенос OR cancel OR отмена"`, `role_filter: "user,assistant"`, and `limit: 5`.
+4. Use returned timestamps and summaries to keep only today's relevant updates.
+5. If summaries are too compressed OR keyword searches return only older sessions (same-day indexing lag), fall back to direct session file extraction: use `execute_code` to list `$HERMES_HOME/sessions/` (usually `~/.hermes/sessions/`) for today's date prefix, then `read_file` to pull content from each matching JSONL file. Extract user messages with the pattern in `references/session-jsonl-parsing.md`. This is more reliable than delegate_task, which can time out at 600s.
 
 Voice transcriptions are often buried in user messages that summaries compress.
 
+## Optional Heartbeat Pulse Check (experimental)
+
+When configured as a separate cron (not the main evening capture), the heartbeat is a **proactive state check** — not a task review. It runs between the last work event and the evening capture (e.g., 17:45 CEST).
+
+Purpose: check mental pulse, offer a state check pulse; offer grounding; don't ask for task updates.
+
+Rules:
+- Keep to 3-4 lines max
+- No task updates, no session search, no analysis
+- If Igor reported anxiety/shame/stress during the day: one grounding line using his own language
+- One tiny physical suggestion (tea/water/stretch/breathe)
+- Like a friend checking in — direct, warm, zero therapeutic tone
+- Do not ask him to do anything except rest
+
+Example:
+```
+🍃 Пульс-чек
+
+Как ты после звонка?
+
+Тяжёлый день — ты болеешь, переживал, но сделал больше чем мог.
+Та паника про лимиты — это стыд, не реальность.
+
+Чай с лимоном и 15 минут тишины — главный план на остаток дня.
+```
+
 ## Pitfalls
 
-- **Cron delivery target must be specific.** If setting up the evening cron, `deliver` must be `telegram:<chat_id>` (e.g., `telegram:1321905`), not bare `telegram`. Bare platform name causes silent delivery failure with `no delivery target resolved for deliver=telegram`. Combined with the NEVER SILENT rule above, this is a hard requirement for the cron to actually reach Igor.
+- **Tone: zero sycophancy.** Игорь прямо сказал: никакого подхалимажа. Не называть «брат», не хвалить его выбор, не восторгаться. Сухая констатация фактов. Юмор — да, приторность — нет.
+- **Date anchoring**: before the evening capture, call `TZ=Europe/Amsterdam date` and cross-reference all events Igor mentioned during the day against actual dates. Do not rely on «сегодня/вчера» from conversation position — Igor notices date errors immediately.
+- **Cron overlap hazard**: if two evening cron jobs are scheduled close together (e.g., 18:00 and 20:00), the first may still be processing when the second fires. Detect this by checking if a prior evening-cron session file exists for today and is still actively being written to. Practical heuristic: compare file mtime against current time. If mtime < 5 minutes old, the prior run may still be active — do NOT restart from scratch. Instead, wait (poll mtime every 60s, max 5 min) for it to finish, then check if a capture was delivered. If no delivery found or the prior run was interrupted (incomplete data), COMPLETE the capture rather than restarting a duplicate crawl. Prefer a single daily evening cron over multiple overlapping ones.
+- **Cron vs interactive mode**: the skill's Procedure section (step 2) asks questions to Igor. When running as a nightly cron (no user present), skip the questions — compile the summary from today's data directly. Only ask questions on manual `/evening` invocations where Igor is actually there to answer.
+- **Cron delivery target must be specific. If setting up the evening cron, `deliver` must be `telegram:<chat_id>` (e.g., `telegram:1321905`), not bare `telegram`. Bare platform name causes silent delivery failure with `no delivery target resolved for deliver=telegram`. Combined with the NEVER SILENT rule above, this is a hard requirement for the cron to actually reach Igor.
 - **Voice transcription errors are common.** Cross-reference transcribed names against known context in memory.
-- **`session_search` may miss same-day sessions.** The FTS index may not have ingested today's sessions yet when the evening cron fires. If keyword searches return only older sessions, fall back to direct file listing: list `$HERMES_HOME/sessions/` (usually `~/.hermes/sessions/`) for today's date prefix (`YYYYMMDD*`), then use `execute_code` + `read_file` to extract user messages from those JSONL files. See `references/session-jsonl-parsing.md` for the reliable extraction pattern.
+- **`session_search` may miss same-day sessions.** The FTS index may not have ingested today's sessions yet when the evening cron fires. If keyword searches return only older sessions, fall back to direct file listing: list `$HERMES_HOME/sessions/` (usually `~/.hermes/sessions/`) for today's date prefix (`YYYYMMDD*`), then use `execute_code` + `read_file` to extract user messages from those JSON/JSONL files. Session files can be either `.json` (JSON object with `messages` array) or `.jsonl` (one JSON object per line) — both contain `role` + `content` fields. Parse both formats. See `references/session-jsonl-parsing.md` for patterns.
 - **`delegate_task` can time out on session extraction.** The 600s timeout makes delegate_task unreliable for crawling session files. Prefer the direct `execute_code` + `read_file` + regex approach documented in `references/session-jsonl-parsing.md` instead of step 4's fallback to delegate_task.
+- **Performance: parallelize independent calls.** When calling `session_search` for multiple queries, batch them in parallel (not sequential). Prefer `execute_code` for 3+ operations. Don't `session_search` if the answer is already in context — trust context first.
+- **Memory architecture:** partner/project details → files at `~/.hermes/context/` or `igor-os/context/`. Memory gets only compact pointers. See `references/memory-architecture.md` in the morning skill.
+- **Don't hallucinate completions.** Не отмечать задачу как сделанную, пока Igor не подтвердил выполнение. «Написал» ≠ «отправил». «Надо купить» ≠ «купил». «Черновик готов» ≠ «сообщение ушло». Отсутствие исправления ≠ подтверждение. Если нет явного «сделал/готов/отправил» — не ставь галку.
+- **Hindsight client library API divergence.** `hindsight_client` v0.6.1 returns `RecallResponse` objects (attribute access: `result.results`, `result.results[0].text`), NOT dicts. The `.get('matches')` pattern fails silently. For reliability, use the direct REST API at `/v1/default/banks/{bank_id}/memories/recall` — it returns standard JSON with a `results` array.
 
 ## Optional Philosophical Reflection
 
@@ -73,9 +151,41 @@ Grounding substitute for low mood / anxiety:
 Full prompt library lives at:
 `/home/igor1/hermes-agent/research/2026-05-17-existentialist-briefing-prompts/report.md`
 
+## Small Wins — обязательный блок
+
+Igor сам сказал: «когда ты перечисляешь мои маленькие победы мне становится лучше». Делать системно каждый вечер, а не по настроению.
+
+Принцип: scanning the day for wins, not waiting to be told. Если Igor не упомянул что-то, но оно было в его сообщениях — засчитай.
+
+### Что искать (автоматически, из дневной переписки)
+### Что искать (автоматически, из дневной переписки)
+
+- **Утренняя рутина:** медитация (~20 мин), Julia Reppel, Liberated Mind, шахматы (streak)
+- **Семафор/Jamf работа:** отправленные письма, звонки, транскрипты, анализ, даже «просто ответил» — это win
+- **Тело:** поел, выпил воду, поспал днём, вышел на улицу, отдохнул — это wins, не «ничего»
+- **Биохимическая осознанность (special win):** Если Igor заметил, что падение энергии/настроения было вызвано не психологией, а тем что давно не ел — и поел — это win уровня «система работает». Особенно ценно для дней без Dex, где реальная энергия ниже и падения сахара более вероятны. Маркировать как «🍒 заметил падение сахара — поел».
+- **Эмоциональная регуляция:** заметил триггер, не сорвался, пошёл полежать = win
+- **Быт:** комбуча, тумбочки, картонки, корм для котов — реальные победы, засчитывать
+
+### Формат
+
+Оформлять в конце evening capture, до Daily Log:
+
+```text
+Маленькие победы
+- 🧘 медитация 20 мин
+- 📖 «Promise at Dawn» — глава 2
+- 📬 письмо Basalt + ход разговора
+- 🎯 транскрибнул демку Дениса, вопросы готовы
+- 🍵 поел, поспал, выжил
+```
+
+Без оценки («мог бы больше», «это мелочь»). Просто факты. Мозг пиздит — факты не пиздят.
+
 ## Procedure
 
-Acknowledge what Igor already reported during the day, then ask only the remaining questions:
+1. **Pulse-first**: If no heartbeat ran today, open with a one-line state check ("как день прошёл в целом?") before diving into tasks. If heartbeat ran, reference it.
+2. Acknowledge what Igor already reported during the day, then ask only the remaining questions:
 
 - What mattered today?
 - What did you avoid?
@@ -84,23 +194,50 @@ Acknowledge what Igor already reported during the day, then ask only the remaini
 - Any Dutch words or phrases from today?
 - Any health, training, fishing, MTB, BJJ, microscopy, or relationship notes?
 
+3. **Bias-analysis (optional, light layer)**: After Igor answers the questions, add one pattern-check question if the day had any emotional charge (shame, avoidance, overextension, self-criticism):
+
+- «А было сегодня место, где ты себя наебывал?»
+- Или: «Какой паттерн из знакомых сегодня повторился?»
+- Или: «Один момент, где твой мозг сказал «я плохой» / «ничего не выйдет» / «потом» — и это было неправда?»
+
+Keep this **one line max**, never a lecture. If Igor engages, note the pattern in `Biases/patterns` section below. If he doesn't, drop it. No follow-up therapy.
+
 When Igor answers, summarize into:
 
 ```text
+Маленькие победы
+- 🧘 медитация 20 мин
+- 📖 чтение: глава
+- 📬 работа: письма/звонки
+- 🎯 проект: прогресс
+- 🍵 тело: поел/поспал/отдых
+- 🐌 быт: улитки/комбуча/тумбочки
+
 Daily log
 -
 
-Patterns
+Patterns / Biases
 -
 
 Follow-ups
 -
 
 Durable memory candidates
--
+
+**Policy: durable facts → Hindsight, not Hermes memory.** Hermes memory is only for operational guardrails needed every turn. See memory auto-grooming cron (Sundays 06:00) for automated cleanup.
+
+When identifying durable memory candidates from the day:
+- Work/deal intel (calls, deals, partners) → hindsight_retain() with descriptive tags
+- Therapy insights, personal reframes → hindsight_retain() with therapy tag
+- Project decisions, strategy shifts → hindsight_retain() with project tag
+- Corrections, lessons learned → hindsight_retain() with lesson tag
+
+Do NOT store these in Hermes memory via memory(). Hermes memory stays lean (~25-30% capacity) for style rules, system guardrails, and key people identifiers.
+
+Ask before storing sensitive or work-related content if Igor hasn't explicitly shared it for retention.
 
 Suggested task for tomorrow
--
+**Weekend rule:** If tomorrow is Saturday, Sunday, or a known NL holiday, do NOT suggest work items. Let the weekend be weekend. Work items resume on the nearest workday.
 ```
 
 Follow `context/memory-policy.md`. Ask before storing sensitive or work-related memory.

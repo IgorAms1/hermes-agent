@@ -1,7 +1,7 @@
 ---
 name: mindmap
 description: Igor OS visual synthesis mode for turning research, notes, plans, decisions, or processes into Telegram-ready PNG mind maps and block diagrams.
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     category: igor-os
@@ -60,26 +60,48 @@ Create a directory:
 $HERMES_HOME/mindmaps/YYYY-MM-DD-<topic-slug>/
 ```
 
-Write a UTF-8 JSON spec:
+Write a UTF-8 JSON spec with these fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `title` | string | Chart title (shown in header + center hub for mindmap layout) |
+| `subtitle` | string | Optional subtitle |
+| `layout` | string | `"flow"` or `"mindmap"` |
+| `palette` | string | `"ocean"`, `"forest"`, or `"warm"` |
+| `nodes` | array | Array of node objects (max 12) |
+| `footer` | string | Optional source/date footer |
+
+Each node object:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `title` | string | Bold heading for the card |
+| `body` | string | Optional summary sentence shown before bullets |
+| `items` | array of strings | Bullet points (each starts with •) |
+
+Full example:
 
 ```json
 {
-  "title": "Короткий заголовок",
-  "subtitle": "Что показывает схема",
-  "layout": "flow",
+  "title": "Тема исследования",
+  "subtitle": "Ключевые выводы и структура",
+  "layout": "mindmap",
   "palette": "ocean",
   "nodes": [
     {
-      "title": "1. Первый блок",
-      "body": "Короткое объяснение.",
-      "items": ["Один важный пункт", "Еще один пункт"]
+      "title": "Блок 1",
+      "body": "Короткое пояснение.",
+      "items": [
+        "Первый факт или вывод",
+        "Второй факт или вывод"
+      ]
     }
   ],
-  "footer": "Опционально: источник или дата"
+  "footer": "Источник: ... | Навигатор, 18.05.2026"
 }
 ```
 
-Render it with:
+Render it with the script:
 
 ```bash
 /home/igor1/hermes-agent/venv/bin/python /home/igor1/hermes-agent/igor-os/scripts/render_mindmap.py /absolute/path/to/mindmap.json /absolute/path/to/mindmap.png
@@ -100,17 +122,23 @@ print("OK")
 PY
 ```
 
-Send to Telegram:
+Send to Telegram — **один вызов**, не два:
 
 ```text
-send_message(action="send", target="telegram", message="MEDIA:/absolute/path/to/mindmap.png")
+send_message(action="send", target="telegram", message="Собрал схему: <тема>\nФормат: <layout>\nMEDIA:/absolute/path/to/mindmap.png")
 ```
+
+Текст до `MEDIA:` становится caption'ом к изображению. **Не отправляй текст и картинку отдельными сообщениями** — это создаёт спам в чате. Если нужно отправить только картинку без caption — используй `message="MEDIA:/path"`.
 
 If image sending fails, send it as a document:
 
 ```text
 send_message(action="send", target="telegram", message="[[as_document]] MEDIA:/absolute/path/to/mindmap.png")
-```
+send_message(action="send", target="telegram", message="[[as_document]] MEDIA:/absolute/path/to/mindmap.png")
+
+## Tone: zero sycophancy
+
+Same as deep_research skill — no «отлично», «прекрасно», «брат», «ого», cheerleading. Dry delivery: «Собрал схему: тема.». No fluff around the image.
 
 ## Good Defaults
 
@@ -119,13 +147,16 @@ send_message(action="send", target="telegram", message="[[as_document]] MEDIA:/a
 - `palette: "warm"` for decisions, risks, buying choices, tradeoffs.
 - `layout: "flow"` for sequential blocks.
 - `layout: "mindmap"` for clustered concepts.
+- Canvas width: `1600` for flow, `2000` for mindmap (these are defaults — override via spec `width` field if needed).
 
-## Telegram Caption
 
-Keep it short:
 
-```text
-Собрал схему: <тема>
-Формат: <flow/mindmap>
-Файл: /absolute/path/to/mindmap.png
-```
+## Pitfalls
+
+- **Hub text**: The center hub in mindmap layout shows the `title` from the JSON spec. Make the title descriptive enough to work both as the chart heading AND the central hub label (e.g. "Дельфины" not "Исследование"). Avoid single-char hub labels like "?".
+- **Connector lines**: Mindmap layout draws diagonal lines from the center hub to each card. These are intentional connector lines, not rendering artifacts. If asked to "fix the lines", they are feature lines — make them thinner (width=3) and use the palette line colour so they look clean.
+- **Card count**: Max 12 nodes. Mindmap layout uses a 2-column grid. With 7 nodes, the last card in the right column will have empty space below it — that's normal for unbalanced counts. With 9+ nodes the layout fills more evenly.
+- **Font sizes on Telegram**: The renderer uses 64px title, 36px card title, 28px body on a 2000px canvas. This is optimised for Telegram image preview (tap-to-zoom). Smaller sizes look cramped in chat.
+- **Card overflow**: If card text is very long, body text will wrap. The card height adjusts automatically but keep bullets to 1-3 per card. If body+items exceeds ~8 lines total, split into more nodes.
+- **Vision analysis of output**: The renderer output can be viewed via `vision_analyze` to debug layout issues — but only if the vision auxiliary model supports image input. As of May 2026, the vision auxiliary is set to `google/gemini-3.1-flash-lite` (via OpenRouter) which supports vision. If you get a 404 "No endpoints found that support image input", the vision model doesn't support images — switch to a vision-capable model.
+- **Double delivery**: Не отправляй caption и MEDIA двумя вызовами send_message. Один вызов с `message="caption\nMEDIA:/path"` отправляет и текст, и картинку как одно сообщение. Два вызова = два сообщения в чате, пользователь видит спам.
