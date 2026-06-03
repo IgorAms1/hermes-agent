@@ -153,72 +153,51 @@ If you find a time anchor, **add it to the visible schedule** with the time, eve
 
 ## Calendar Integration — ACTIVE
 
-Igor's Google Calendar is connected (igor.kluchnikov@gmail.com). OAuth token at `~/.hermes/google_token.json`, auto-refreshes.
-
-The morning brief should include a ` Сегодня в календаре` section showing events for today.
+Igor's Google Calendar is connected through the bundled Google Workspace skill. The morning brief should include a `Сегодня в календаре` section showing events for today.
 
 ### How to read calendar
 
-There is no standalone `google_api.py` or google-workspace skill. Use direct Python calls from the Hermes venv:
+Use the deterministic Google Workspace API script first. Do not write ad-hoc Python that reads `google_token.json` directly unless the script is unavailable and Igor explicitly asks for debugging.
 
-```python
-from google.oauth2.credentials import Credentials
-from googleapiclient.discovery import build
-
-creds = Credentials.from_authorized_user_file(
- os.path.expanduser('~/.hermes/google_token.json'))
-service = build('calendar', 'v3', credentials=creds)
-events = service.events().list(
- calendarId='primary',
- timeMin='2026-05-24T00:00:00+02:00',
- timeMax='2026-05-25T00:00:00+02:00',
- singleEvents=True,
- orderBy='startTime'
-).execute()
+```bash
+GAPI="/home/igor1/hermes-agent/venv/bin/python ${HERMES_HOME:-$HOME/.hermes}/skills/productivity/google-workspace/scripts/google_api.py"
+$GAPI calendar list --start "YYYY-MM-DDT00:00:00+02:00" --end "YYYY-MM-DDT23:59:59+02:00" --calendar primary --max 25
 ```
 
-Write the Python script to a temp file and run via the Hermes venv (`/home/igor1/hermes-agent/venv/bin/python`). Or use `execute_code` with the terminal tool.
+For the morning brief:
+1. Get today's date with `TZ=Europe/Amsterdam date`.
+2. Use Europe/Amsterdam ISO timestamps with timezone offsets.
+3. Parse the JSON list returned by `$GAPI calendar list`.
+4. Show only useful fields: time, summary, location, and short notes if present.
+5. If the command fails with auth/token errors, mention that calendar is unavailable and use the re-auth notes below. Do not block the whole brief.
 
-**Token profile:** Scopes include calendar, docs, sheets, gmail (read+send), drive, contacts. Has refresh_token so auto-refresh works. Token file is `google_token.json`, NOT `google_calendar_token.json` (the reference file is outdated).
+This path is preferred because it centralizes token refresh, avoids repeated `execute_code` snippets, reduces latency, and keeps sensitive token handling inside the existing Google Workspace script.
 
 ### Token expiry detection and re-auth
 
-The OAuth token can expire or be revoked at any time. The cron job will fail with `TOKEN_REVOKED` and the morning brief will miss calendar events. Detect and fix:
+The OAuth token can expire or be revoked at any time. Detect with the setup script, not by printing or inspecting token values:
 
-```python
-# Detection (run silently before calendar read):
-from google.oauth2.credentials import Credentials
-try:
-    creds = Credentials.from_authorized_user_file(
-        os.path.expanduser('~/.hermes/google_token.json'))
-    if creds.expired:
-        from google.auth.transport.requests import Request
-        creds.refresh(Request())  # throws RefreshError if revoked
-except Exception as e:
-    print(f"TOKEN_REVOKED: {e}")  # re-auth needed
+```bash
+/home/igor1/hermes-agent/venv/bin/python ${HERMES_HOME:-$HOME/.hermes}/skills/productivity/google-workspace/scripts/setup.py --check
 ```
 
-Re-auth flow:
-1. `rm -f ~/.hermes/google_oauth_pending.json ~/.hermes/google_token.json`
-2. Try standard: `python ~/.hermes/skills/productivity/google-workspace/scripts/setup.py --auth-url` → get URL
-3. Send URL to Igor for browser authorization
-4. Igor pastes redirect URL → `setup.py --auth-code "URL"` → `setup.py --check`
-5. **If `setup.py --auth-code` fails with `code_verifier or verifier is not needed`**, use the manual PKCE-free workaround in `references/google-calendar-setup.md` → section "Known limitation: setup.py PKCE fails (workaround)"
-6. Resume normal calendar reads
+If status is `TOKEN_REVOKED` or auth fails, re-auth is needed:
+1. Use `references/google-calendar-setup.md` for the full flow.
+2. Generate an auth URL with `setup.py --auth-url`.
+3. Igor authorizes in browser and returns the redirect URL.
+4. Complete with `setup.py --auth-code "URL"`, then verify with `setup.py --check`.
+
+Never print token contents or client secret contents.
 
 ### Creating events
 
-To create calendar events, use the same API pattern with `service.events().insert()`:
+Calendar writes are allowed only after explicit user confirmation. Prefer the same deterministic script:
 
-```python
-event = {
- 'summary': 'Event title',
- 'description': 'Optional description',
- 'start': {'dateTime': '2026-06-18T07:00:00+02:00', 'timeZone': 'Europe/Amsterdam'},
- 'end': {'dateTime': '2026-06-18T13:00:00+02:00', 'timeZone': 'Europe/Amsterdam'},
-}
-created = service.events().insert(calendarId='primary', body=event).execute()
+```bash
+$GAPI calendar create --summary "Event title" --start "2026-06-18T07:00:00+02:00" --end "2026-06-18T13:00:00+02:00" --calendar primary
 ```
+
+Before any create/delete, show the exact summary, date, time, calendar, and attendees/location if present, then wait for confirmation. For delete, include the event ID and title.
 
 ## Optional Philosophical Focus
 
