@@ -28,40 +28,37 @@ Before generating the brief, recall yesterday's relevant updates AND Hindsight d
 4. Only carry forward items that are **confirmed unfinished** — if Igor said he did it, it is done.
 5. **CRITICAL: Do NOT include a "Corrections" / "Коррекции" section in the brief.** If extraction/session_search finds corrections Igor made to previous briefs (e.g., "Bogdan call was Monday not Thursday"), those corrections have already been applied to the current context. Listing them again is noise. Silently absorb corrections into the correct sections of the new brief without flagging them. The only exception: if Igor gave a correction TODAY (in the current session), acknowledge it once then move on.
 
-### B) Hindsight recall — MANDATORY
+### B) Hindsight recall — targeted and bounded
 
-USER.md is now lean (only operational guardrails). Before every brief, pull changeable personal context from Hindsight:
+USER.md is now lean (only operational guardrails). Before every brief, pull only the changeable personal context needed for today's sections from Hindsight.
 
-Use the `hindsight_recall` tool with broad queries covering the brief sections:
-- `hindsight_recall(query="books literature")` — current reading
-- `hindsight_recall(query="training sports health retinol")` — training, health protocols
-- `hindsight_recall(query="music hobbies fishing")` — hobbies
+Use targeted queries with `n_results: 3` by default:
+- `books literature current reading` — only if reading/books may appear in the brief.
+- `training health recovery retinol` — for training and health protocols.
+- `music hobbies fishing` — only if hobbies/recovery section needs context.
+- Partner/project query — only when Igor mentioned a partner/project/person by name today or yesterday.
 
-If Igor mentioned a partner or project by name (Semaphore, CloudFresh, Techsvit, Jamf, etc.), also recall partner context.
-
-Prefer the `hindsight_recall` tool (Hermes plugin). If unavailable, use direct REST API:
-```python
-import requests, json
-r = requests.post('http://localhost:8888/v1/default/banks/igor-os/memories/recall',
-    json={'query': 'changeable context', 'n_results': 5}, timeout=10)
-```
-
-If Hindsight is unreachable, skip gracefully — but this means brief will have minimal personal context, so note it.
-
-**⚠️ Partial timeout pattern:** Hindsight can respond to *some* queries while timing out on others (especially the first query in a batch). If you batch multiple queries and some time out at 10s, retry the failed ones individually with `timeout=30` — they often succeed on the second attempt with more time. This recovers partner context and training/health facts instead of silently losing them. Only skip entirely if *all* queries time out at 30s.
-
-If Igor mentions a partner, project, or topic by name today (CloudFresh, Semaphore, Techsvit, Traco, Cloudflare, Jamf, Basalt, etc.), run an additional Hindsight query to pull durable context.
-
-**Prefer direct REST API** (more reliable than the client library):
+Prefer direct REST for predictable timeout behavior:
 
 ```python
-import requests, json
-r = requests.post('http://localhost:8888/v1/default/banks/igor-os/memories/recall',
- json={'query': 'partner context', 'n_results': 3}, timeout=10)
-facts = r.json().get('results', [])
-for f in facts[:3]:
- print(f['text'][:200])
+import requests
+
+def recall(query, timeout=10):
+    r = requests.post(
+        'http://localhost:8888/v1/default/banks/igor-os/memories/recall',
+        json={'query': query, 'n_results': 3},
+        timeout=timeout,
+    )
+    r.raise_for_status()
+    return r.json().get('results', [])
 ```
+
+Performance rules:
+1. Do not issue broad all-purpose Hindsight queries when the answer is already in injected context or session extraction.
+2. Do not batch many recalls if Hindsight is already slow. Run the necessary query first; add optional queries only if the brief needs them.
+3. On timeout, retry only the failed query once with `timeout=30`. Do not rerun successful queries.
+4. If the retry fails, skip that topic gracefully and continue the brief.
+5. Keep only the top 1-3 relevant facts in the final reasoning; do not paste long recall output.
 
 If the client library is needed (e.g., entity extraction), the accessor pattern differs from dict-style:
 
@@ -70,13 +67,11 @@ from hindsight_client import Hindsight
 h = Hindsight(base_url='http://localhost:8888')
 result = h.recall(query='partner context', bank_id='igor-os')
 # NOT result.get('matches') — use result.results (list of fact objects)
-for f in result.results:
+for f in result.results[:3]:
  print(f.text[:200])
 ```
 
-Hindsight stores partner details, call extracts, project decisions, and therapy insights that don't fit in MEMORY.md. If the recall returns rich results, reference them in the brief.
-
-If the API is down, skip gracefully — don't block the brief.
+Hindsight stores partner details, call extracts, project decisions, and therapy insights that don't fit in MEMORY.md. If recall returns rich results, reference them in the brief. If Hindsight is down or slow, skip gracefully — don't block the brief.
 
 ### C) Cross-reference: hindsight_recall vs session_search corrections
 

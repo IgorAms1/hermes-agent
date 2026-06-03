@@ -63,7 +63,7 @@ Before asking any questions, first scan the current visible Telegram conversatio
 
    Reference returned facts in the Daily Log or Follow-ups section. Skip gracefully if the API is unavailable.
 
-   **⚠️ Partial timeout pattern:** Hindsight can respond to *some* queries while timing out on others (especially the first query in a batch). If you batch multiple queries and some time out at 10s, retry the failed ones individually with `timeout=30` — they often succeed on the second attempt. Only skip entirely if *all* queries time out at 30s.
+   **Performance rule:** keep Hindsight recall targeted. Use `n_results: 3`, query only the named partner/project/person, and avoid broad catch-all recalls. If a recall times out at 10s, retry only that failed query once with `timeout=30`; do not rerun successful queries. If retry fails, skip that context and continue the evening capture.
 
 2. For same-day factual extraction, prefer the deterministic helper over multiple `session_search` calls:
    ```bash
