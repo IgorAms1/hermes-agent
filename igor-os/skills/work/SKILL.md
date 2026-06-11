@@ -223,6 +223,35 @@ Reference pattern: `references/account-notes.md`.
 
 Use when Igor shares detailed call summaries for Semaphore (or similar) customer/partner/founder calls. Standard pattern: Igor provides structured text → extract deal-relevant facts → save to Hindsight + optionally create context file.
 
+### Semaphore / Personal Obsidian Inbox Protocol
+
+Use when Igor asks to save raw Semaphore or important personal text materials into Obsidian/GitHub.
+
+Current pipeline:
+- GitHub repo: `IgorAms1/semobstest`
+- VPS clone: `~/vaults/semobstest`
+- Write script: `~/bin/hermes_add_note.sh`
+- Branch used by Hermes: `hermes-inbox`
+- Allowed write target only: `00_Inbox/hermes/`
+
+Usage:
+```bash
+~/bin/hermes_add_note.sh <project> "<topic>" <body_file>
+```
+
+Project values:
+- `semaphore` — Semaphore work/commercial/GTM notes
+- `personal` — important personal notes Igor wants visible in Obsidian
+
+Rules:
+1. Create a temporary Markdown body file, then call the script.
+2. The script creates a note in `00_Inbox/hermes/`, commits, and pushes to GitHub.
+3. Do NOT directly edit `10_Source_of_Truth/`, `20_Changelogs/`, or `30_Decisions/`.
+4. Do NOT overwrite existing files unless Igor explicitly instructs it.
+5. Preserve raw input when Igor requests it; do not heavily rewrite inbox notes.
+6. Structure notes into: confirmed facts, assumptions, open questions, suggested source-of-truth updates, and items requiring human review.
+7. For source-of-truth/changelog/decision updates, save only a raw inbox note. Codex or Igor later promotes it.
+
 **Standard extraction shape:**
 
 1. **Deal facts** — customer name, contact, stage, amount, timeline, blockers, next steps
@@ -232,8 +261,11 @@ Use when Igor shares detailed call summaries for Semaphore (or similar) customer
 5. **Igor's coaching** — if he coached Katya/founder on sales approach, capture the lesson
 
 **Storage rules:**
-- Call intel → `hindsight_retain()` with tags `["semaphore", "deal"]` or partner name
-- Full reference document → `igor-os/context/semaphore-<deal-slug>-<date>.md` only if complex enough to warrant a dedicated file (Mousquetaires, Fanatics level)
+- For important Semaphore raw notes, prefer the Obsidian/GitHub inbox pipeline: create a temporary Markdown body file and run `~/bin/hermes_add_note.sh semaphore "<topic>" <body_file>`. This writes only to `00_Inbox/hermes/`, commits to `hermes-inbox`, and pushes to `IgorAms1/semobstest` for later Codex processing.
+- Raw note body must separate: confirmed facts, assumptions, open questions, suggested source-of-truth updates, and items requiring human review. Do not mix assumptions into facts.
+- Do NOT directly edit `10_Source_of_Truth/`, `20_Changelogs/`, or `30_Decisions/`. Codex/human review promotes inbox notes later.
+- Call intel can also be retained in Hindsight with tags `["semaphore", "deal"]` or partner name when it is durable and useful for recall.
+- Full reference document under `igor-os/context/` is now secondary; use only when the material is complex enough to warrant a local Hermes reference file in addition to the Obsidian inbox.
 - Do NOT store in Hermes memory (memory policy: operational guardrails only)
 - Do NOT promote to todo unless Igor explicitly assigns follow-up
 
