@@ -38,7 +38,7 @@ Before generating the brief, recall yesterday's relevant updates AND Hindsight d
 
 USER.md is now lean (only operational guardrails). Before every brief, pull only the changeable personal context needed for today's sections from Hindsight.
 
-Use targeted queries with `n_results: 3` by default:
+Use targeted queries with API-supported bounds and client-side trimming:
 - `books literature current reading` — only if reading/books may appear in the brief.
 - `training health recovery retinol` — for training and health protocols.
 - `music hobbies fishing` — only if hobbies/recovery section needs context.
@@ -52,19 +52,20 @@ import requests
 def recall(query, timeout=10):
     r = requests.post(
         'http://localhost:8888/v1/default/banks/igor-os/memories/recall',
-        json={'query': query, 'n_results': 3},
+        json={'query': query, 'budget': 'low', 'max_tokens': 1200},
         timeout=timeout,
     )
     r.raise_for_status()
-    return r.json().get('results', [])
+    return r.json().get('results', [])[:3]
 ```
 
 Performance rules:
-1. Do not issue broad all-purpose Hindsight queries when the answer is already in injected context or session extraction.
-2. Do not batch many recalls if Hindsight is already slow. Run the necessary query first; add optional queries only if the brief needs them.
-3. On timeout, retry only the failed query once with `timeout=30`. Do not rerun successful queries.
-4. If the retry fails, skip that topic gracefully and continue the brief.
-5. Keep only the top 1-3 relevant facts in the final reasoning; do not paste long recall output.
+1. Do not use `n_results`; the current Hindsight REST API ignores it. Use `budget` + `max_tokens`, then trim `results[:3]` client-side.
+2. Do not issue broad all-purpose Hindsight queries when the answer is already in injected context or session extraction.
+3. Do not batch many recalls if Hindsight is already slow. Run the necessary query first; add optional queries only if the brief needs them.
+4. On timeout, retry only the failed query once with `timeout=30`. Do not rerun successful queries.
+5. If the retry fails, skip that topic gracefully and continue the brief.
+6. Keep only the top 1-3 relevant facts in the final reasoning; do not paste long recall output.
 
 If the client library is needed (e.g., entity extraction), the accessor pattern differs from dict-style:
 

@@ -47,9 +47,9 @@ Before asking any questions, first scan the current visible Telegram conversatio
    ```python
    import requests, json
    r = requests.post('http://localhost:8888/v1/default/banks/igor-os/memories/recall',
-       json={'query': 'relevant topic', 'n_results': 3}, timeout=10)
-   facts = r.json().get('results', [])
-   for f in facts[:3]:
+       json={'query': 'relevant topic', 'budget': 'low', 'max_tokens': 1200}, timeout=10)
+   facts = r.json().get('results', [])[:3]
+   for f in facts:
        print(f['text'][:200])
    ```
 
@@ -65,7 +65,7 @@ Before asking any questions, first scan the current visible Telegram conversatio
 
    Reference returned facts in the Daily Log or Follow-ups section. Skip gracefully if the API is unavailable.
 
-   **Performance rule:** keep Hindsight recall targeted. Use `n_results: 3`, query only the named partner/project/person, and avoid broad catch-all recalls. If a recall times out at 10s, retry only that failed query once with `timeout=30`; do not rerun successful queries. If retry fails, skip that context and continue the evening capture.
+   **Performance rule:** keep Hindsight recall targeted. Do not use `n_results`; the current REST API ignores it. Use `budget: "low"` + `max_tokens: 1200`, trim `results[:3]` client-side, query only the named partner/project/person, and avoid broad catch-all recalls. If a recall times out at 10s, retry only that failed query once with `timeout=30`; do not rerun successful queries. If retry fails, skip that context and continue the evening capture.
 
 2. For same-day factual extraction, prefer the deterministic helper over multiple `session_search` calls. Start with a wide signal query:
    ```bash

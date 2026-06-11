@@ -161,7 +161,7 @@ If the Python pipeline returns empty because shell pipeline stdin handling is aw
 - Calendar reads through `execute_code` are functional but slower and noisier than a deterministic calendar wrapper/tool.
 - Memory files above 80% need pruning/offloading to Hindsight; below 80% is not urgent.
 - Hindsight reachable but poor recall means data/model/query issue, not service outage.
-- Hindsight timeouts should be handled by narrowing queries first: `n_results=3`, named partner/project queries only, retry only failed queries once at 30s, then skip gracefully. Do not tune infrastructure before query shape is fixed.
+- Hindsight timeouts should be handled by narrowing queries first: use API-supported `budget`/`max_tokens`, trim `results[:3]` client-side, named partner/project queries only, retry only failed queries once at 30s, then skip gracefully. Do not tune infrastructure before query shape is fixed.
 - Repeated timeouts or high RSS after restart indicate real degradation; recommend rollback or a focused debug pass.
 - `tool_loop_guardrails.hard_stop_enabled: false` means Hermes warns about loops but does not stop them. Do not recommend enabling hard-stop until a loop pattern is understood.
 
