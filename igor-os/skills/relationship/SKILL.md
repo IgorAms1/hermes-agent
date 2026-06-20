@@ -128,3 +128,4 @@ Before finalizing:
 - Do not make Nastya into a project or KPI.
 - If Igor is shame-spiraling, return to one caring action, not an essay about attachment.
 - Cats count as home logistics. Lana and Archer are part of the domestic operating system.
+- For expensive gifts, check whether the stated question is a proxy. Example: asking Nastya to choose an iPhone color may really mean «I need permission/shared responsibility to spend a large amount from savings.» If the partner is excited, the issue is not rejection of the gift; it is Igor losing freedom to back out after creating expectation. Use `decision` skill → Permission-Seeking Executive Dysfunction / floor-holds check.

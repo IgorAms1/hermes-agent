@@ -329,6 +329,8 @@ Recognize these non-obvious positive signals:
 
 Use when Igor is negotiating his own role, equity, retainer, or deal-based compensation with a startup founder (e.g., Katya from Semaphore). This is different from selling — Igor is the product, and the shame of pricing himself is a recurring blocker.
 
+**After-terms ambiguity / reduced involvement pattern:** If Igor reports that after proposing terms he is being involved less, do not immediately treat it as a pure commercial strategy problem. First separate facts from attachment/shame interpretation: fewer calls / unclear role / movement without him are facts; «меня бросили», «я неинтересен», «они не хотят делиться процентом» are hypotheses. Recommend a calm alignment ping to the founder, not a productivity sprint or side-channel escalation. Do not suggest proving usefulness through more work; this is exactly the performance-as-belonging loop that worsens burnout.
+
 **Key insight from therapy prep (May 2026):** Igor's reluctance to name a number when Katya asked «что ты хочешь за это?» is the same mechanism as the Jamf shame-paralysis — both root in «я не имею права занимать место / получать деньги».
 
 **Standard structure (two-track model proven in May 2026):**

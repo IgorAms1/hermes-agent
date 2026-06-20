@@ -44,10 +44,14 @@ After the source primacy check, search for additional material:
 6. **Cross-reference evening little wins** — evening captures often record small wins (a fixed thing, a repaired item, a conversation, a moment with Nastya, a household task). Search for things like: `победа OR win OR сделал OR починил OR убрал OR купил OR приготовил OR записал OR отправил OR помыл OR загрузил`. These are easy to miss and important to Igor.
 7. **Second-pass fallback:** If after the first pass the review feels thin (fewer than ~15 items across all categories), do a second pass manually reading user messages from the week's sessions. The first pass often misses voice-transcribed material, small household wins, and insights that don't match keyword patterns.
 8. Scan memory exclusions before assigning work tasks: do not add ASBIS or Salesforce lead visibility unless Igor explicitly brought them up.
+9. **Cross-reference current task-state before setting next-week work priorities.** If Semaphore, Obsidian, active tasks, P0s, GTM, partner calls, or deal work appeared in the week, load/use `read-semaphore-tasks` (or run `~/bin/hermes_read_tasks.sh`) after raw recall. Use the task file to distinguish active/waiting/backlog/completed items. Do not carry forward work priorities only from chat memory or old summaries when the Obsidian task-state is available.
+10. **Scheduled delivery discipline:** if `/weekly` runs as a cron job with auto-delivery, produce the review as the final response only. Do not call `send_message`. Use `[SILENT]` only when raw logs genuinely show nothing new; a thin week is still a report, not silence.
 
 References:
 - `references/backfill-missed-weekly.md` — recovery pattern for a missed weekly review
 - `~/.hermes/scripts/session_week_summary.py` — extract user messages by day from raw session files. Run before every multi-day summary.
+- `read-semaphore-tasks` skill / `~/bin/hermes_read_tasks.sh` — current Semaphore task-state for next-week work priorities.
+- `references/task-state-cross-reference.md` — pattern for combining raw weekly logs with Obsidian task-state without hallucinating task status.
 
 ## Procedure
 

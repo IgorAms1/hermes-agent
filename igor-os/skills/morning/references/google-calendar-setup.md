@@ -87,21 +87,26 @@ TOKEN_REVOKED: ('invalid_grant: ...')
 
 ### Known limitation: setup.py PKCE fails (workaround)
 
-The `setup.py` always uses PKCE (`code_challenge_method=S256`). For this OAuth client configuration, Google rejects PKCE during token exchange with: `invalid_grant: code_verifier or verifier is not needed`.
+### Known limitation: setup.py PKCE fails (workaround)
 
-If the standard re-auth fails with this error **even after cleaning pending and starting fresh**, the workaround is to generate the auth URL manually without PKCE and exchange via raw requests:
+The `setup.py` always uses PKCE (`code_challenge_method=S256`). For this OAuth client configuration, Google can reject PKCE during token exchange with: `invalid_grant: code_verifier or verifier is not needed`.
+
+If the standard re-auth fails with this error **even after cleaning pending and starting fresh**, use the manual no-PKCE flow below.
 
 #### Manual URL generation (without PKCE)
 
+Important: load the client secret once; do not call `json.load(f)` twice on the same file handle.
+
 ```python
-import secrets, json, os, requests
+import secrets, json, os
 from pathlib import Path
 from urllib.parse import urlencode
 
 HERMES_HOME = Path(os.path.expanduser('~/.hermes'))
 
 with open(HERMES_HOME / 'google_client_secret.json') as f:
-    cs = (json.load(f).get('installed') or json.load(f).get('web'))
+    raw = json.load(f)
+cs = raw.get('installed') or raw.get('web')
 
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",
@@ -127,7 +132,6 @@ params = {
 }
 auth_url = 'https://accounts.google.com/o/oauth2/auth?' + urlencode(params)
 
-# Save state for verification
 pending = {'state': state, 'redirect_uri': 'http://localhost:1', 'no_pkce': True}
 (HERMES_HOME / 'google_oauth_pending.json').write_text(json.dumps(pending, indent=2))
 print(auth_url)
@@ -135,36 +139,65 @@ print(auth_url)
 
 #### Manual token exchange (without PKCE)
 
-```python
-import requests, json
+Accept the full redirect URL from Igor, verify `state`, extract `code` and `scope`, then write the token. Preserve the old refresh token only if Google does not return a new one.
 
-# Extract code from Igor's redirect URL, then:
+```python
+import json, os, requests
+from pathlib import Path
+from urllib.parse import urlparse, parse_qs
+
+callback = '<full http://localhost:1/?state=...&code=... URL from Igor>'
+HERMES_HOME = Path(os.path.expanduser('~/.hermes'))
+pending_path = HERMES_HOME / 'google_oauth_pending.json'
+secret_path = HERMES_HOME / 'google_client_secret.json'
+token_path = HERMES_HOME / 'google_token.json'
+
+pending = json.loads(pending_path.read_text())
+params = parse_qs(urlparse(callback).query)
+code = params.get('code', [''])[0]
+state = params.get('state', [''])[0]
+if not code:
+    raise SystemExit('no code in callback')
+if state != pending.get('state'):
+    raise SystemExit('state mismatch')
+
+with secret_path.open() as f:
+    raw = json.load(f)
+cs = raw.get('installed') or raw.get('web')
+
 data = {
-    'code': '<code_from_redirect>',
+    'code': code,
     'client_id': cs['client_id'],
-    'client_secret': cs['client_secret'],
-    'redirect_uri': 'http://localhost:1',
+    'client_secret': cs.get('client_secret'),
+    'redirect_uri': pending.get('redirect_uri', 'http://localhost:1'),
     'grant_type': 'authorization_code',
 }
-r = requests.post('https://oauth2.googleapis.com/token', data=data)
-token = r.json()  # access_token, refresh_token, scope
+r = requests.post('https://oauth2.googleapis.com/token', data=data, timeout=30)
+r.raise_for_status()
+token = r.json()
+granted_scopes = (params.get('scope', [''])[0] or token.get('scope', '')).split()
 
-# Write token file
 token_payload = {
     'token': token['access_token'],
     'refresh_token': token.get('refresh_token'),
     'token_uri': 'https://oauth2.googleapis.com/token',
     'client_id': cs['client_id'],
-    'client_secret': cs['client_secret'],
-    'scopes': token.get('scope', '').split(),
+    'client_secret': cs.get('client_secret'),
+    'scopes': granted_scopes,
     'expiry': None,
     'account': '',
     'type': 'authorized_user',
 }
-(HERMES_HOME / 'google_token.json').write_text(json.dumps(token_payload, indent=2))
+if not token_payload['refresh_token'] and token_path.exists():
+    old = json.loads(token_path.read_text())
+    token_payload['refresh_token'] = old.get('refresh_token')
+
+token_path.write_text(json.dumps(token_payload, indent=2))
+pending_path.unlink(missing_ok=True)
+print('EXCHANGE_OK')
 ```
 
-After exchange, run `setup.py --check` once to trigger auto-refresh (which fills in the `expiry` field).
+After exchange, run `setup.py --check-live` and then a real calendar read (`google_api.py calendar list`) to verify integration end-to-end.
 
 **Important:** remind Igor to select ALL scopes in the consent screen, not just Calendar — otherwise gmail/drive/docs features will be unavailable without re-auth.
 
