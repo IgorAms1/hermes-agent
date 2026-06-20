@@ -99,6 +99,10 @@ def _build_subprocess_env() -> dict[str, str]:
     env["HOME"] = home
     from hermes_constants import apply_subprocess_home_env
     apply_subprocess_home_env(env)
+    # Copilot ACP is an external user CLI: it should see the real account HOME
+    # for its own auth/config, even when Hermes profile-home isolation exists.
+    env["HOME"] = home
+    env["HERMES_REAL_HOME"] = home
     return env
 
 
