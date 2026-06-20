@@ -87,6 +87,7 @@ for _tool in (
     "browser_vision",
     "browser_console",
     "session_search",
+    "read_terminal",
     "ha_list_entities",
     "ha_get_state",
     "ha_list_services",
