@@ -4,7 +4,7 @@ description: "Use this skill when designing, generating an MVP blueprint for, au
 metadata:
   hermes:
     category: igor-os
-  version: "1.2.0"
+  version: "1.2.1"
 ---
 
 # Agents Best Practices
@@ -23,6 +23,7 @@ An agent harness is the control plane around a model. The model proposes actions
 - context compaction, memory, retrieval, scoped instructions
 - attach Agent Skills, MCP servers, external connectors
 - audit for reliability, cost, safety, latency, observability
+- design or improve a private personal operating-layer agent: messaging UI, memory, routines, approvals, scheduled jobs, and life/work workflows
 - create system prompts or developer instructions for an agent
 - make knowledge/validation signals legible to an agent
 
@@ -51,6 +52,8 @@ An agent harness is the control plane around a model. The model proposes actions
 ## Full references
 
 Deep-dive reference files at `igor-os/skills/agents-best-practices/references/`:
+- `skill-design-notes-vas3k.md` — concise notes from the Vas3k skill-design article: descriptions as trigger hooks, progressive disclosure, scripts/templates/references, and class-level library hygiene.
+- `hermes-codex-usage-limits.md` — Hermes/OpenAI Codex usage-limit reporting: ChatGPT `wham/usage` vs OpenAI org costs, OAuth credential-pool fallback, and Amsterdam-time reset rendering.
 - `mvp-agent-blueprint.md` — domain-specific MVP harness blueprint
 - `architecture.md` — component model and harness boundaries
 - `agentic-loop.md` — loop invariants, retries, budgets, stopping
@@ -58,4 +61,6 @@ Deep-dive reference files at `igor-os/skills/agents-best-practices/references/`:
 - `context-memory-compaction.md` — context, memory, retrieval, compaction
 - `security-evals-observability.md` — guardrails, tracing, evals, launch gates
 - `agent-legibility-feedback-loops.md` — source-of-truth artifacts and cleanup
+- `personal-ai-operating-layer.md` — private personal-agent patterns: Telegram/messaging UI, memory control plane, autonomy matrix, routines, and usefulness evaluation
 - `checklists.md` — implementation and audit checklists
+- `igor-os-persona.md` — Igor's refined agent persona specification (direct, sarcastic, compassionate, action-oriented, funny, accepting)
