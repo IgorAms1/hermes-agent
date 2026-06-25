@@ -95,6 +95,17 @@ Track:
 - cue that helped;
 - one repeatable next drill.
 
+### Dirt Jumper / Explosive Bike Skill Back Rule
+
+Treat high bunny hops, repeated bunny-hop series, 180s, manuals with aggressive pull/compression, and similar dirt-jumper drills as **ballistic hinge / spinal load**, not harmless play. If Igor reports a sudden sensation like “что-то порвалось” in the back/lower back:
+
+- stop the riding session immediately;
+- do not suggest “testing” another bunny hop/manual to check it;
+- log side/location, trigger drill, radiation/neurology if mentioned;
+- recommend physio/GP assessment, especially if pain persists into the next day;
+- give red flags: leg weakness/numbness, saddle numbness, bladder/bowel changes, inability to walk normally, rapidly worsening pain, fever/major trauma;
+- downshift BJJ and explosive bike skills until assessed; walking and gentle pain-free mobility only.
+
 ### Return-to-Sport After Injury (MTB / BJJ)
 
 Igor's pattern: all-or-nothing. After crash/injury, shame cycle activates. See full protocol in `references/return-to-sport-psychology.md`.
@@ -152,6 +163,8 @@ Before finalizing:
 ## Gotchas
 
 - Do not frame backing off as weakness. The body is voting; count the votes.
+- If Igor reports pausing BJJ/gym subscription because of back, physio, medication, or low capacity, treat it as **recovery/admin success**, not as a training failure. Acknowledge the concrete action and do not immediately replace it with a new training plan unless he asks.
 - Do not recommend "just stretch more" as magic dust.
+- If Igor says he walks with difficulty because of back pain, stop all sport framing completely: no light training, no mobility-as-workout, no testing. Treat it as function-preservation / medical follow-up mode with red-flag screening.
 - Do not stack hard lower-body work, MTB intensity, and long hikes without recovery logic.
 - If Igor reports feeling great, still avoid sudden heroic programming. Heroism is how backs file complaints.

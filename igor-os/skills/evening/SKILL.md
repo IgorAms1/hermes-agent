@@ -117,10 +117,12 @@ Example:
 - **Voice transcription errors are common.** Cross-reference transcribed names against known context in memory.
 - **Multi-day voice-note split:** If Igor sends one voice note that mixes events from different dates, do not flatten it into one «today» log. Ask or infer exact dates, then rewrite the log under separate date headers. If Igor corrects the split («Гаага была 10 июня, щука сегодня»), immediately update the capture with the corrected dates and do not keep the old merged version.
 - **`session_search` may miss same-day sessions.** The FTS index may not have ingested today's sessions yet when the evening cron fires. Prefer `/home/igor1/hermes-agent/igor-os/scripts/session_extract.py --date today ...`; it reads `.json`/`.jsonl` session files directly, filters internal skill prompts, and emits compact JSON. Use `session_search` only as a narrow fallback.
+- **But `session_extract --date today` can also return zero sessions.** Do not interpret `sessions_scanned: []` as “nothing happened.” Fall back to `session_search` with the actual Amsterdam date plus broad update terms, then scroll the matched current-day session around raw user messages. If the search result is huge/persisted, read or parse the persisted output to extract `user` messages and nearby assistant confirmations; avoid relying on assistant summaries alone.
 - **`delegate_task` can time out on session extraction.** The 600s timeout makes delegate_task unreliable for crawling session files. Prefer `igor-os/scripts/session_extract.py` or the lower-level patterns in `references/session-jsonl-parsing.md`.
 - **Performance: parallelize independent calls.** When calling `session_search` for multiple queries, batch them in parallel (not sequential). Prefer `execute_code` for 3+ operations. Don't `session_search` if the answer is already in context — trust context first.
 - **Memory architecture:** partner/project details → files at `~/.hermes/context/` or `igor-os/context/`. Memory gets only compact pointers. See `references/memory-architecture.md` in the morning skill.
-- **Don't hallucinate completions.** Не отмечать задачу как сделанную, пока Igor не подтвердил выполнение. «Написал» ≠ «отправил». «Надо купить» ≠ «купил». «Черновик готов» ≠ «сообщение ушло». Отсутствие исправления ≠ подтверждение. Если нет явного «сделал/готов/отправил» — не ставь галку.
+- **Retention hygiene after Igor's 2026-06-23 correction:** do not turn the evening crawl into automatic storage. Ordinary same-day facts ("two calls drained me", "sent a BJJ pause message", "answered Adfinis but decisions remain") belong in the evening report/session history unless Igor asks to retain them or they clearly form a reusable durable pattern. Hindsight is for durable context, not a dump of every daily update. Hermes memory is only for compact operational guardrails; never store daily logs there.
+- **Don't hallucinate completions.** Не отмечать задачу как сделанную, пока Igor не подтвердил выполнение. «Написал» ≠ «отправил». «Надо купить» ≠ «купил». «Черновик готов» ≠ «сообщение ушло». «Отправил сообщение в gym о паузе» ≠ «абонемент отменён» до ответа/подтверждения. Отсутствие исправления ≠ подтверждение. Если нет явного «сделал/готов/отправил/подтвердили» — не ставь галку.
 - **Hindsight client library API divergence.** `hindsight_client` v0.6.1 returns `RecallResponse` objects (attribute access: `result.results`, `result.results[0].text`), NOT dicts. The `.get('matches')` pattern fails silently. For reliability, use the direct REST API at `/v1/default/banks/{bank_id}/memories/recall` — it returns standard JSON with a `results` array.
 
 ## Optional Philosophical Reflection
@@ -165,6 +167,22 @@ Full prompt library lives at:
 
 Igor сам сказал: «когда ты перечисляешь мои маленькие победы мне становится лучше». Делать системно каждый вечер, а не по настроению.
 
+### Pattern-recognition wins
+
+Count real-time recognition of a repeating state as a win, even if the state itself was unpleasant or unresolved. Especially important pattern class: **office/workday state appearing outside work**.
+
+Capture it explicitly when Igor says he noticed:
+- “это тот же офисный паттерн”;
+- “я не хочу здесь находиться, но держу лицо”;
+- low resource + suppressed impulses + politeness/social obligation;
+- tics returning as a signal;
+- loss of agency / someone else taking over decisions.
+
+Format as a concrete win, not a therapy lecture:
+`- 🧭 поймал паттерн в моменте: офисное состояние включилось в [context], тики = сигнал низкого ресурса + сдержанных импульсов.`
+
+Do not over-solve immediately. First log the detection. If giving a next step, keep it tiny: exit plan, water/air break, or permission to stop pretending for 2 minutes.
+
 Принцип: scanning the day for wins, not waiting to be told. Если Igor не упомянул что-то, но оно было в его сообщениях — засчитай.
 
 ### Что искать (автоматически, из дневной переписки)
@@ -173,6 +191,8 @@ Igor сам сказал: «когда ты перечисляешь мои ма
 - **Утренняя рутина:** медитация (~20 мин), Julia Reppel, Liberated Mind, шахматы (streak)
 - **Семафор/Jamf работа:** отправленные письма, звонки, транскрипты, анализ, даже «просто ответил» — это win
 - **Тело:** поел, выпил воду, поспал днём, вышел на улицу, отдохнул — это wins, не «ничего»
+- **Recovery substitutes:** если Igor заменил думскроллинг на лежать с маской/наушниками, цельный альбом, тишину, игру, прогулку или другой восстановительный кокон — считать это win. Формулировать как «🎧 музыка в темноте вместо думскроллинга» / «🎮 захотел играть = ресурс вернулся» без морализации.
+- **Resource markers:** возвращение желания играть, читать, слушать музыку, кататься или смотреть кино — не “лень”, а полезный маркер ресурса. Логировать как наблюдение о состоянии нервной системы, не превращать в задачу.
 - **Биохимическая осознанность (special win):** Если Igor заметил, что падение энергии/настроения было вызвано не психологией, а тем что давно не ел — и поел — это win уровня «система работает». Особенно ценно для дней без Dex, где реальная энергия ниже и падения сахара более вероятны. Маркировать как «🍒 заметил падение сахара — поел».
 - **Эмоциональная регуляция:** заметил триггер, не сорвался, пошёл полежать = win
 - **Быт:** комбуча, тумбочки, картонки, корм для котов — реальные победы, засчитывать

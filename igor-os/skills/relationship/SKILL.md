@@ -35,6 +35,24 @@ Igor values small, quiet acts of care over grand gestures. Home, Nastya, and the
 
 ## Protocols
 
+### Social obligation / board-game depletion pattern
+
+When Igor describes a friendly/social setting where he does not want to be there but keeps a polite face, treat it as a possible **office-pattern transfer**, not as a friendship moral failure.
+
+Look for:
+- hot/stuffy/long session;
+- waiting around or poor setup by others;
+- one person taking over decisions (“theater of one actor”);
+- Igor suppressing impulses to stay polite;
+- tics returning or feeling “covered/kryet”; 
+- Nastya also not wanting to repeat the activity.
+
+Response shape:
+1. Validate the pattern detection as a concrete win.
+2. Name the mechanism briefly: low resource + social obligation + loss of agency + pretending normal.
+3. Suggest one practical boundary for next time: timebox, air break, explicit exit, or “we’re not playing this again.”
+4. Do not turn it into diagnosis of friends or relationship therapy.
+
 ### Small Act of Care Protocol
 
 ```text

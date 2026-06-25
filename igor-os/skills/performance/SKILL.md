@@ -156,6 +156,12 @@ If the Python pipeline returns empty because shell pipeline stdin handling is aw
 
 ## Interpretation Rules
 
+### Telegram hang / stuck-turn triage
+
+When Igor says Hermes/agent "завис", "hung", or names a long delay duration, treat it as a runtime/performance incident first — not as a complaint about answer content or reasoning drift. Immediately check gateway logs for the relevant window, especially `Cancelled task ... did not exit within 5s`, tool errors, `Unclosed client session`, lingering child processes, and config timeout values. Do not explain the semantic answer mistake until the runtime hang is checked.
+
+See `references/stuck-turn-triage.md` for the compact diagnostic pattern from the 112-minute Telegram hang incident.
+
 - `session_search` errors like `around_message_id ... not in session_id` usually mean a workflow is passing stale or invalid message IDs. Fix the skill/workflow before tuning infrastructure.
 - `execute_code` errors importing unavailable `hermes_tools` functions mean the task should use normal tools or a dedicated tool wrapper, not ad hoc code.
 - Calendar reads through `execute_code` are functional but slower and noisier than a deterministic calendar wrapper/tool.
